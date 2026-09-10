@@ -17,7 +17,7 @@ export default function UploadPage() {
   const [examType, setExamType] = useState("mid-sem");
   const [file, setFile] = useState<File | null>(null);
   
-  const [status, setStatus] = useState<"idle" | "uploading" | "success" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "uploading" | "ocr" | "success" | "ocr-error" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
@@ -70,7 +70,7 @@ export default function UploadPage() {
         .getPublicUrl(filePath);
 
       // 3. Insert paper record
-      const { error: insertError } = await supabase
+      const { data: insertedPaper, error: insertError } = await supabase
         .from("papers")
         .insert({
           subject_id: subjectId,
@@ -78,11 +78,28 @@ export default function UploadPage() {
           exam_type: examType,
           file_url: publicUrlData.publicUrl,
           ocr_status: "pending"
-        });
+        })
+        .select("id")
+        .single();
 
       if (insertError) throw insertError;
 
-      setStatus("success");
+      // 4. Trigger OCR
+      setStatus("ocr");
+      const ocrRes = await fetch("/api/ocr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paper_id: insertedPaper.id }),
+      });
+      
+      const ocrData = await ocrRes.json();
+      
+      if (!ocrData.success) {
+        setStatus("ocr-error");
+      } else {
+        setStatus("success");
+      }
+
       // Reset form
       setFile(null);
       setNewSubjectName("");
@@ -105,7 +122,13 @@ export default function UploadPage() {
       
       {status === "success" && (
         <div className="bg-green-100 text-green-700 p-4 rounded mb-6">
-          Paper uploaded successfully!
+          Done! OCR complete.
+        </div>
+      )}
+
+      {status === "ocr-error" && (
+        <div className="bg-yellow-100 text-yellow-800 p-4 rounded mb-6">
+          Upload done but OCR failed.
         </div>
       )}
 
@@ -185,10 +208,12 @@ export default function UploadPage() {
 
         <button 
           type="submit" 
-          disabled={status === "uploading"}
+          disabled={status === "uploading" || status === "ocr"}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
         >
-          {status === "uploading" ? "Uploading..." : "Upload Paper"}
+          {status === "uploading" && "Uploading..."}
+          {status === "ocr" && "Running OCR..."}
+          {status !== "uploading" && status !== "ocr" && "Upload Paper"}
         </button>
       </form>
     </div>
