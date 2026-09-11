@@ -20,6 +20,10 @@ export default function UploadPage() {
   const [status, setStatus] = useState<"idle" | "uploading" | "ocr" | "success" | "ocr-error" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
+  const [generateSubjectId, setGenerateSubjectId] = useState("");
+  const [generateStatus, setGenerateStatus] = useState<"idle" | "generating" | "success" | "error">("idle");
+  const [generateMessage, setGenerateMessage] = useState("");
+
   useEffect(() => {
     async function fetchSubjects() {
       const { data, error } = await supabase.from("subjects").select("*").order("name");
@@ -113,6 +117,35 @@ export default function UploadPage() {
       console.error(error);
       setStatus("error");
       setErrorMessage(error.message || "An error occurred during upload.");
+    }
+  };
+
+  const handleGenerateQuestions = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!generateSubjectId) return;
+
+    setGenerateStatus("generating");
+    setGenerateMessage("");
+
+    try {
+      const res = await fetch("/api/generate-questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subject_id: generateSubjectId }),
+      });
+      const data = await res.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || "Failed to generate questions.");
+      }
+      
+      setGenerateStatus("success");
+      setGenerateMessage(`Done! ${data.count} questions generated.`);
+      setGenerateSubjectId("");
+    } catch (error: any) {
+      console.error(error);
+      setGenerateStatus("error");
+      setGenerateMessage(error.message || "Failed to generate questions.");
     }
   };
 
@@ -216,6 +249,43 @@ export default function UploadPage() {
           {status !== "uploading" && status !== "ocr" && "Upload Paper"}
         </button>
       </form>
+
+      <div className="mt-12 pt-8 border-t border-gray-200">
+        <h2 className="text-xl font-bold mb-6">Generate Questions</h2>
+        
+        {generateStatus === "success" && (
+          <div className="bg-green-100 text-green-700 p-4 rounded mb-6">
+            {generateMessage}
+          </div>
+        )}
+
+        {generateStatus === "error" && (
+          <div className="bg-red-100 text-red-700 p-4 rounded mb-6">
+            {generateMessage}
+          </div>
+        )}
+
+        <form onSubmit={handleGenerateQuestions} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Subject ID</label>
+            <input 
+              type="text"
+              value={generateSubjectId}
+              onChange={(e) => setGenerateSubjectId(e.target.value)}
+              className="w-full border border-gray-300 rounded p-2"
+              placeholder="Enter subject UUID..."
+              required
+            />
+          </div>
+          <button 
+            type="submit" 
+            disabled={generateStatus === "generating"}
+            className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 disabled:opacity-50"
+          >
+            {generateStatus === "generating" ? "Generating questions..." : "Generate Questions"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
