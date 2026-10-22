@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { GEMINI_MODEL } from '@/lib/gemini';
 
 export async function POST(request: Request) {
   try {
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
       throw new Error("GEMINI_API_KEY is not configured");
     }
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
     
     const promptText = `Based on these previous year exam papers, generate 10 most probable exam questions. Return ONLY a JSON array of objects with fields: question (string) and confidence (number between 0 and 1). No markdown, no extra text.\n\nExam Papers:\n${combinedOcrText}`;
 

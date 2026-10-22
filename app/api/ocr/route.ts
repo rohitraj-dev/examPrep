@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { GEMINI_MODEL } from '@/lib/gemini';
 
 export async function POST(request: Request) {
   let paperId: string | undefined;
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
       throw new Error("GEMINI_API_KEY is not configured");
     }
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
     
     const geminiBody = {
       contents: [

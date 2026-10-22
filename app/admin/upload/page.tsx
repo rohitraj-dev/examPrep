@@ -151,7 +151,10 @@ export default function UploadPage() {
 
   return (
     <div className="max-w-2xl mx-auto p-8">
-      <h1 className="text-2xl font-bold mb-6">Upload Exam Paper</h1>
+      <h1 className="text-2xl font-bold mb-2">Upload Exam Paper</h1>
+      <a href="/admin/bulk-upload" className="text-sm text-blue-600 hover:underline mb-6 block">
+        → Bulk upload multiple PDFs
+      </a>
       
       {status === "success" && (
         <div className="bg-green-100 text-green-700 p-4 rounded mb-6">
