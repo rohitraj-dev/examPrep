@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 type Subject = {
   id: string;
   name: string;
+  code: string | null;
 };
 
 export default function UploadPage() {
@@ -26,8 +27,8 @@ export default function UploadPage() {
 
   useEffect(() => {
     async function fetchSubjects() {
-      const { data, error } = await supabase.from("subjects").select("*").order("name");
-      if (data) setSubjects(data);
+      const { data } = await supabase.from("subjects").select("*").order("code");
+      if (data) setSubjects(data as Subject[]);
     }
     fetchSubjects();
   }, []);
@@ -270,15 +271,20 @@ export default function UploadPage() {
 
         <form onSubmit={handleGenerateQuestions} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Subject ID</label>
-            <input 
-              type="text"
+            <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+            <select
               value={generateSubjectId}
               onChange={(e) => setGenerateSubjectId(e.target.value)}
               className="w-full border border-gray-300 rounded p-2"
-              placeholder="Enter subject UUID..."
               required
-            />
+            >
+              <option value="" disabled>Select a subject</option>
+              {subjects.map((sub) => (
+                <option key={sub.id} value={sub.id}>
+                  {sub.code ? `${sub.code} – ` : ""}{sub.name}
+                </option>
+              ))}
+            </select>
           </div>
           <button 
             type="submit" 

@@ -58,18 +58,25 @@ export async function POST(request: Request) {
       ]
     };
 
-    const geminiResponse = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(geminiBody)
-    });
-
-    if (!geminiResponse.ok) {
-      const errorText = await geminiResponse.text();
-      throw new Error(`Gemini API error: ${geminiResponse.statusText} - ${errorText}`);
-    }
+    const geminiResponse = await (async () => {
+      const backoffs = [2000, 4000, 8000];
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const res = await fetch(geminiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(geminiBody),
+        });
+        if (res.ok) return res;
+        const retryable = [429, 500, 503].includes(res.status);
+        if (retryable && attempt < 2) {
+          await new Promise((r) => setTimeout(r, backoffs[attempt]));
+          continue;
+        }
+        const errorText = await res.text();
+        throw new Error(`Gemini API error ${res.status}: ${errorText}`);
+      }
+      throw new Error('Gemini retry loop exhausted');
+    })();
 
     const geminiData = await geminiResponse.json();
     
