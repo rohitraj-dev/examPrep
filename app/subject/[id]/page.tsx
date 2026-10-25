@@ -16,6 +16,8 @@ type Paper = {
   exam_type: string;
   file_url: string;
   ocr_status: string;
+  uploaded_at?: string | null;
+  set_label?: string;
 };
 
 type AIQuestion = {
@@ -41,14 +43,48 @@ export default function SubjectPage({ params }: { params: Promise<{ id: string }
       try {
         const [subjectRes, papersRes, questionsRes] = await Promise.all([
           supabase.from("subjects").select("name, code, semester").eq("id", id).single(),
-          supabase.from("papers").select("id, year, exam_type, file_url, ocr_status").eq("subject_id", id).not("file_url", "is", null).order("year", { ascending: false }),
+          supabase
+            .from("papers")
+            .select("id, year, exam_type, file_url, ocr_status, uploaded_at")
+            .eq("subject_id", id)
+            .not("file_url", "is", null)
+            .order("year", { ascending: false })
+            .order("exam_type", { ascending: true })
+            .order("uploaded_at", { ascending: true }),
           supabase.from("ai_questions").select("question, confidence, generated_at").eq("subject_id", id).order("confidence", { ascending: false })
         ]);
 
         if (subjectRes.error) throw new Error(subjectRes.error.message || "Failed to load subject");
         
         setSubject(subjectRes.data);
-        if (papersRes.data) setPapers(papersRes.data);
+        if (papersRes.data) {
+          const sorted = [...papersRes.data].sort((a, b) => {
+            if (b.year !== a.year) return b.year - a.year;
+            const examCmp = (a.exam_type || "").localeCompare(b.exam_type || "");
+            if (examCmp !== 0) return examCmp;
+            const timeA = a.uploaded_at ? new Date(a.uploaded_at).getTime() : 0;
+            const timeB = b.uploaded_at ? new Date(b.uploaded_at).getTime() : 0;
+            return timeA - timeB;
+          });
+
+          const counts: Record<string, number> = {};
+          for (const p of sorted) {
+            const key = `${p.year}_${(p.exam_type || "").toLowerCase()}`;
+            counts[key] = (counts[key] || 0) + 1;
+          }
+
+          const setIndex: Record<string, number> = {};
+          const papersWithLabels = sorted.map((p) => {
+            const key = `${p.year}_${(p.exam_type || "").toLowerCase()}`;
+            if (counts[key] > 1) {
+              setIndex[key] = (setIndex[key] || 0) + 1;
+              return { ...p, set_label: `Set ${setIndex[key]}` };
+            }
+            return { ...p, set_label: undefined };
+          });
+
+          setPapers(papersWithLabels);
+        }
         if (questionsRes.data) setQuestions(questionsRes.data);
 
       } catch (err: any) {
@@ -125,7 +161,14 @@ export default function SubjectPage({ params }: { params: Promise<{ id: string }
                 <div key={paper.id} className="bg-gray-900 rounded-xl border border-gray-800 p-6 hover:border-gray-700 transition-colors shadow-lg">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h3 className="text-xl font-bold text-gray-200">{paper.year}</h3>
+                      <h3 className="text-xl font-bold text-gray-200 flex items-center gap-2">
+                        <span>{paper.year}</span>
+                        {paper.set_label && (
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-900/30 text-blue-300 border border-blue-800/50">
+                            {paper.set_label}
+                          </span>
+                        )}
+                      </h3>
                       <p className="text-gray-400 capitalize">{paper.exam_type.replace("-", " ")}</p>
                     </div>
                     {paper.ocr_status === "done" && (
