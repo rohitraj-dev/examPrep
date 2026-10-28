@@ -370,6 +370,14 @@ export default function BulkUploadPage() {
     saved: "bg-purple-100 text-purple-700",
   };
 
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/admin/logout", { method: "POST" });
+    } finally {
+      window.location.href = "/admin/login";
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto p-6">
       {/* Header */}
@@ -383,11 +391,20 @@ export default function BulkUploadPage() {
             ← Single upload
           </a>
         </div>
-        {savedCount > 0 && (
-          <div className="bg-green-100 text-green-700 text-sm px-4 py-2 rounded">
-            ✓ {savedCount} paper{savedCount !== 1 ? "s" : ""} saved
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {savedCount > 0 && (
+            <div className="bg-green-100 text-green-700 text-sm px-4 py-2 rounded">
+              ✓ {savedCount} paper{savedCount !== 1 ? "s" : ""} saved
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="text-sm px-3 py-1.5 border border-gray-300 dark:border-neutral-700 text-gray-700 dark:text-neutral-300 rounded hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+          >
+            Logout
+          </button>
+        </div>
       </div>
 
       {/* Drop zone */}

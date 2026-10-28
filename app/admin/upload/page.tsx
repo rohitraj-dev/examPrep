@@ -150,9 +150,26 @@ export default function UploadPage() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/admin/logout", { method: "POST" });
+    } finally {
+      window.location.href = "/admin/login";
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto p-8">
-      <h1 className="text-2xl font-bold mb-2">Upload Exam Paper</h1>
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="text-2xl font-bold">Upload Exam Paper</h1>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="text-sm px-3 py-1.5 border border-gray-300 dark:border-neutral-700 text-gray-700 dark:text-neutral-300 rounded hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+        >
+          Logout
+        </button>
+      </div>
       <a href="/admin/bulk-upload" className="text-sm text-blue-600 hover:underline mb-6 block">
         → Bulk upload multiple PDFs
       </a>
