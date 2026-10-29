@@ -39,13 +39,13 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-gray-950 text-gray-100 p-6 md:p-12">
+    <main className="min-h-screen bg-gray-950 text-gray-100 px-4 py-8 sm:p-6 md:p-12 overflow-x-hidden">
       <div className="max-w-6xl mx-auto">
-        <header className="mb-16 text-center">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 mb-4 pb-2">
+        <header className="mb-10 sm:mb-16 text-center">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 mb-4 pb-2 break-words">
             ExamPrep — BCA 3rd Semester
           </h1>
-          <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+          <p className="text-gray-400 text-base sm:text-lg max-w-2xl mx-auto break-words">
             Your one-stop destination for previous year question papers, AI-generated practice questions, and exam preparation resources.
           </p>
         </header>
@@ -56,24 +56,24 @@ export default function Home() {
             <span className="text-gray-400 text-lg animate-pulse">Loading subjects...</span>
           </div>
         ) : subjects.length === 0 ? (
-          <div className="text-center py-20 bg-gray-900 rounded-2xl border border-gray-800 shadow-xl">
+          <div className="text-center py-20 px-4 bg-gray-900 rounded-2xl border border-gray-800 shadow-xl">
             <h2 className="text-2xl font-bold text-gray-300 mb-2">No subjects found</h2>
-            <p className="text-gray-500">Check back later or add subjects via the admin panel.</p>
+            <p className="text-gray-400">Check back later or add subjects via the admin panel.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {subjects.map((subject) => (
               <div 
                 key={subject.id} 
-                className="bg-gray-900 rounded-2xl border border-gray-800 p-6 flex flex-col hover:border-gray-700 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
+                className="bg-gray-900 rounded-2xl border border-gray-800 p-5 sm:p-6 flex flex-col hover:border-gray-700 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 min-w-0"
               >
                 <div className="flex-1">
-                  <div className="flex justify-between items-start mb-4 gap-4">
-                    <h2 className="text-xl font-bold text-gray-100 line-clamp-2">
+                  <div className="flex justify-between items-start mb-4 gap-3 min-w-0">
+                    <h2 className="text-xl font-bold text-gray-100 line-clamp-2 break-words flex-1 min-w-0">
                       {subject.name}
                     </h2>
                     {subject.code && (
-                      <span className="bg-gray-800 text-blue-300 text-xs font-mono px-2.5 py-1 rounded-md whitespace-nowrap border border-gray-700">
+                      <span className="bg-gray-800 text-blue-300 text-xs font-mono px-2.5 py-1 rounded-md shrink-0 border border-gray-700">
                         {subject.code}
                       </span>
                     )}
@@ -87,7 +87,7 @@ export default function Home() {
                 
                 <Link 
                   href={`/subject/${subject.id}`}
-                  className="mt-auto w-full block text-center bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 px-4 rounded-xl transition-colors shadow-lg shadow-blue-900/20"
+                  className="mt-auto w-full min-h-[44px] flex items-center justify-center text-center bg-blue-600 hover:bg-blue-500 text-white font-medium py-2.5 px-4 rounded-xl transition-colors shadow-lg shadow-blue-900/20"
                 >
                   View Papers
                 </Link>
