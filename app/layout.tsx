@@ -22,6 +22,10 @@ export const metadata: Metadata = {
   },
   description:
     "Practice BCA 3rd semester previous year question papers and AI-generated questions with ExamPrep.",
+  appleWebApp: {
+    capable: true,
+    title: "ExamPrep",
+  },
   openGraph: {
     type: "website",
     siteName: "ExamPrep",
@@ -50,6 +54,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  themeColor: "#030712",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

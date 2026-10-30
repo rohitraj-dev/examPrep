@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import InstallHint from "@/components/InstallHint";
 
 export default function Footer() {
   const pathname = usePathname();
@@ -22,6 +23,7 @@ export default function Footer() {
           Report a problem / Request a paper
         </a>
       </p>
+      <InstallHint />
     </footer>
   );
 }
