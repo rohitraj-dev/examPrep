@@ -46,13 +46,23 @@ export default function UploadPage() {
       // 1. Create new subject if necessary
       if (subjectId === "new") {
         if (!newSubjectName) throw new Error("New subject name is required");
-        const { data: newSubject, error: subjectError } = await supabase
-          .from("subjects")
-          .insert({ name: newSubjectName })
-          .select()
-          .single();
-          
-        if (subjectError) throw subjectError;
+        const subjectRes = await fetch("/api/admin/subjects", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: newSubjectName,
+            code: null,
+            semester: null,
+            branch: null,
+          }),
+        });
+        const subjectData = await subjectRes.json().catch(() => null);
+
+        if (!subjectRes.ok) {
+          throw new Error(subjectData?.error || "Failed to create subject");
+        }
+
+        const newSubject = subjectData;
         subjectId = newSubject.id;
         
         // Add to local state so it appears in the list next time
@@ -64,9 +74,23 @@ export default function UploadPage() {
       const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
       const filePath = `${subjectId}/${fileName}`;
 
+      const signedUploadRes = await fetch("/api/admin/signed-upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: filePath }),
+      });
+      const signedUploadData = await signedUploadRes.json().catch(() => null);
+
+      if (!signedUploadRes.ok) {
+        throw new Error(
+          signedUploadData?.error || "Failed to create signed upload URL",
+        );
+      }
+
+      const { path, token } = signedUploadData;
       const { error: uploadError } = await supabase.storage
         .from("papers")
-        .upload(filePath, file);
+        .uploadToSignedUrl(path, token, file);
 
       if (uploadError) throw uploadError;
 
@@ -75,19 +99,24 @@ export default function UploadPage() {
         .getPublicUrl(filePath);
 
       // 3. Insert paper record
-      const { data: insertedPaper, error: insertError } = await supabase
-        .from("papers")
-        .insert({
+      const paperRes = await fetch("/api/admin/papers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           subject_id: subjectId,
           year,
           exam_type: examType,
           file_url: publicUrlData.publicUrl,
-          ocr_status: "pending"
-        })
-        .select("id")
-        .single();
+          ocr_status: "pending",
+        }),
+      });
+      const paperData = await paperRes.json().catch(() => null);
 
-      if (insertError) throw insertError;
+      if (!paperRes.ok) {
+        throw new Error(paperData?.error || "Failed to insert paper");
+      }
+
+      const insertedPaper = paperData;
 
       // 4. Trigger OCR
       setStatus("ocr");
