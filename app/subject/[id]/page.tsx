@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
 import PapersList from "@/components/PapersList";
 
@@ -24,6 +25,35 @@ type AIQuestion = {
   confidence: number;
   generated_at: string;
 };
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const { data: subject } = await supabase
+    .from("subjects")
+    .select("name, code")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (!subject) {
+    return {
+      title: "Subject not found",
+      description: "The requested ExamPrep subject could not be found.",
+    };
+  }
+
+  const subjectTitle = subject.code
+    ? `${subject.name} (${subject.code}) PYQs`
+    : `${subject.name} PYQs`;
+
+  return {
+    title: subjectTitle,
+    description: `Find previous year question papers and AI-generated practice questions for ${subject.name}${subject.code ? ` (${subject.code})` : ""} on ExamPrep.`,
+  };
+}
 
 function QueryError() {
   return (
