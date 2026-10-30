@@ -24,3 +24,96 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.print-only-heading {
+  display: none;
+}
+
+@media print {
+  @page {
+    margin: 1.5cm;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  #print-area,
+  #print-area * {
+    visibility: visible !important;
+  }
+
+  #print-area {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  #print-area .print-only-heading {
+    display: block;
+    margin-bottom: 1.5rem;
+    color: #000000 !important;
+  }
+
+  #print-area .print-only-heading h1 {
+    margin: 0 0 0.35rem;
+    font-size: 1.5rem;
+    line-height: 1.25;
+  }
+
+  #print-area .print-only-heading p {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  #print-area button {
+    display: none !important;
+  }
+
+  #print-area h2,
+  #print-area p,
+  #print-area span {
+    color: #000000 !important;
+  }
+
+  #print-area [class*="rounded"],
+  #print-area [class*="shadow"],
+  #print-area [class*="border"] {
+    border-radius: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  #print-area > div:not(.print-only-heading) {
+    background: #ffffff !important;
+  }
+
+  #print-area ul {
+    margin: 0;
+    padding: 0;
+  }
+
+  #print-area li {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 1rem;
+    break-inside: avoid;
+    border-bottom: 1px solid #d1d5db !important;
+    padding: 0.75rem 0 !important;
+    background: #ffffff !important;
+  }
+
+  #print-area li:last-child {
+    border-bottom: 0 !important;
+  }
+}

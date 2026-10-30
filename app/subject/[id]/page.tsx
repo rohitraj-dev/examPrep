@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
 import PapersList from "@/components/PapersList";
+import PrintButton from "@/components/PrintButton";
 
 type Subject = {
   name: string;
@@ -191,10 +192,20 @@ export default async function SubjectPage({
           </p>
         </section>
 
-        <section>
-          <h2 className="mb-6 text-2xl font-bold text-gray-100">
-            AI Predicted Questions
-          </h2>
+        <section id="print-area">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <h2 className="text-2xl font-bold text-gray-100">
+              AI Predicted Questions
+            </h2>
+            {questions.length > 0 && <PrintButton />}
+          </div>
+          <div className="print-only-heading">
+            <h1>
+              {subject.name}
+              {subject.code ? ` (${subject.code})` : ""}
+            </h1>
+            <p>AI-generated probable questions — ExamPrep</p>
+          </div>
           {questions.length === 0 ? (
             <div className="rounded-xl border border-gray-800 bg-gray-900 p-6 text-center text-gray-400 sm:p-8">
               No questions generated yet. Admins can generate questions from
