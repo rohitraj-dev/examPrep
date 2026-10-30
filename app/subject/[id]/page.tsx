@@ -178,6 +178,17 @@ export default async function SubjectPage({
             Previous Year Papers
           </h2>
           <PapersList papers={papersWithLabels} />
+          <p className="mt-4 text-sm text-gray-400">
+            Missing a paper for this subject?{" "}
+            <a
+              href="https://forms.gle/cL7FhSVQXziHkPPT8"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-blue-400 underline decoration-blue-400/50 underline-offset-4 transition-colors hover:text-blue-300"
+            >
+              Request it
+            </a>
+          </p>
         </section>
 
         <section>
