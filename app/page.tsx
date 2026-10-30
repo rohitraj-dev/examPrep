@@ -1,12 +1,5 @@
-import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-
-type Subject = {
-  id: string;
-  name: string;
-  code: string | null;
-  semester: string | null;
-};
+import SubjectGrid from "@/components/SubjectGrid";
 
 export default async function Home() {
   const { data: subjects, error } = await supabase
@@ -47,40 +40,7 @@ export default async function Home() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {(subjects as Subject[]).map((subject) => (
-              <div
-                key={subject.id}
-                className="flex min-w-0 flex-col rounded-2xl border border-gray-800 bg-gray-900 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-gray-700 hover:shadow-2xl sm:p-6"
-              >
-                <div className="flex-1">
-                  <div className="mb-4 flex min-w-0 items-start justify-between gap-3">
-                    <h2 className="line-clamp-2 min-w-0 flex-1 break-words text-xl font-bold text-gray-100">
-                      {subject.name}
-                    </h2>
-                    {subject.code && (
-                      <span className="shrink-0 rounded-md border border-gray-700 bg-gray-800 px-2.5 py-1 font-mono text-xs text-blue-300">
-                        {subject.code}
-                      </span>
-                    )}
-                  </div>
-                  {subject.semester && (
-                    <div className="mb-6 inline-block rounded-full border border-purple-800/50 bg-purple-900/30 px-3 py-1 text-sm text-purple-300">
-                      Semester:{" "}
-                      <span className="font-semibold">{subject.semester}</span>
-                    </div>
-                  )}
-                </div>
-
-                <Link
-                  href={`/subject/${subject.id}`}
-                  className="mt-auto flex min-h-11 w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-center font-medium text-white shadow-lg shadow-blue-900/20 transition-colors hover:bg-blue-500"
-                >
-                  View Papers
-                </Link>
-              </div>
-            ))}
-          </div>
+          <SubjectGrid subjects={subjects} />
         )}
       </div>
     </main>
