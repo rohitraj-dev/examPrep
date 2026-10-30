@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { GEMINI_MODEL } from '@/lib/gemini';
 
 export async function POST(request: Request) {
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     }
 
     // 1. Fetch the paper row from Supabase
-    const { data: paper, error: fetchError } = await supabase
+    const { data: paper, error: fetchError } = await supabaseAdmin
       .from('papers')
       .select('id, file_url, ocr_status')
       .eq('id', paperId)
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
     }
 
     // 6. Update papers row to success
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('papers')
       .update({
         ocr_text: extractedText,
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
 
     // On any error, set status to failed if we know the paperId
     if (paperId) {
-      await supabase
+      await supabaseAdmin
         .from('papers')
         .update({ ocr_status: 'failed' })
         .eq('id', paperId);

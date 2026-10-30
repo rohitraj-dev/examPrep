@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { GEMINI_MODEL } from '@/lib/gemini';
 
 export async function POST(request: Request) {
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     }
 
     // 1. Fetch all papers for that subject from Supabase
-    const { data: papers, error: fetchError } = await supabase
+    const { data: papers, error: fetchError } = await supabaseAdmin
       .from('papers')
       .select('ocr_text')
       .eq('subject_id', subjectId)
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
     }
 
     // 5. Delete existing ai_questions rows for this subject_id
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await supabaseAdmin
       .from('ai_questions')
       .delete()
       .eq('subject_id', subjectId);
@@ -122,7 +122,7 @@ export async function POST(request: Request) {
        return NextResponse.json({ success: true, count: 0 });
     }
 
-    const { error: insertError } = await supabase
+    const { error: insertError } = await supabaseAdmin
       .from('ai_questions')
       .insert(rowsToInsert);
 
