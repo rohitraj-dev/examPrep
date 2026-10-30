@@ -1,7 +1,5 @@
-"use client";
-
-import { useEffect, useState, use } from "react";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 type Subject = {
@@ -26,166 +24,168 @@ type AIQuestion = {
   generated_at: string;
 };
 
-export default function SubjectPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+function QueryError() {
+  return (
+    <div className="rounded-2xl border border-red-900/60 bg-gray-900 px-4 py-12 text-center shadow-xl sm:px-8">
+      <h2 className="mb-2 text-xl font-bold text-red-400 sm:text-2xl">
+        Unable to load this subject
+      </h2>
+      <p className="mb-6 text-gray-400">
+        We couldn&apos;t load the subject resources right now. Please try again
+        later.
+      </p>
+      <Link
+        href="/"
+        className="inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-600 px-6 py-2.5 font-medium text-white transition-colors hover:bg-blue-500"
+      >
+        ← Back
+      </Link>
+    </div>
+  );
+}
 
-  const [subject, setSubject] = useState<Subject | null>(null);
-  const [papers, setPapers] = useState<Paper[]>([]);
-  const [questions, setQuestions] = useState<AIQuestion[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+export default async function SubjectPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const [subjectRes, papersRes, questionsRes] = await Promise.all([
+    supabase
+      .from("subjects")
+      .select("name, code, semester")
+      .eq("id", id)
+      .maybeSingle(),
+    supabase
+      .from("papers")
+      .select("id, year, exam_type, file_url, ocr_status, uploaded_at")
+      .eq("subject_id", id)
+      .not("file_url", "is", null)
+      .order("year", { ascending: false })
+      .order("exam_type", { ascending: true })
+      .order("uploaded_at", { ascending: true }),
+    supabase
+      .from("ai_questions")
+      .select("question, confidence, generated_at")
+      .eq("subject_id", id)
+      .order("confidence", { ascending: false }),
+  ]);
 
-  useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      setError("");
-
-      try {
-        const [subjectRes, papersRes, questionsRes] = await Promise.all([
-          supabase.from("subjects").select("name, code, semester").eq("id", id).single(),
-          supabase
-            .from("papers")
-            .select("id, year, exam_type, file_url, ocr_status, uploaded_at")
-            .eq("subject_id", id)
-            .not("file_url", "is", null)
-            .order("year", { ascending: false })
-            .order("exam_type", { ascending: true })
-            .order("uploaded_at", { ascending: true }),
-          supabase.from("ai_questions").select("question, confidence, generated_at").eq("subject_id", id).order("confidence", { ascending: false })
-        ]);
-
-        if (subjectRes.error) throw new Error(subjectRes.error.message || "Failed to load subject");
-        
-        setSubject(subjectRes.data);
-        if (papersRes.data) {
-          const sorted = [...papersRes.data].sort((a, b) => {
-            if (b.year !== a.year) return b.year - a.year;
-            const examCmp = (a.exam_type || "").localeCompare(b.exam_type || "");
-            if (examCmp !== 0) return examCmp;
-            const timeA = a.uploaded_at ? new Date(a.uploaded_at).getTime() : 0;
-            const timeB = b.uploaded_at ? new Date(b.uploaded_at).getTime() : 0;
-            return timeA - timeB;
-          });
-
-          const counts: Record<string, number> = {};
-          for (const p of sorted) {
-            const key = `${p.year}_${(p.exam_type || "").toLowerCase()}`;
-            counts[key] = (counts[key] || 0) + 1;
-          }
-
-          const setIndex: Record<string, number> = {};
-          const papersWithLabels = sorted.map((p) => {
-            const key = `${p.year}_${(p.exam_type || "").toLowerCase()}`;
-            if (counts[key] > 1) {
-              setIndex[key] = (setIndex[key] || 0) + 1;
-              return { ...p, set_label: `Set ${setIndex[key]}` };
-            }
-            return { ...p, set_label: undefined };
-          });
-
-          setPapers(papersWithLabels);
-        }
-        if (questionsRes.data) setQuestions(questionsRes.data);
-
-      } catch (err: any) {
-        console.error("Error fetching subject data:", err);
-        setError(err.message || "An unexpected error occurred.");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    if (id) fetchData();
-  }, [id]);
-
-  if (loading) {
+  if (subjectRes.error || papersRes.error || questionsRes.error) {
     return (
-      <main className="min-h-screen bg-gray-950 text-gray-100 px-4 py-8 sm:p-6 md:p-12 flex flex-col justify-center items-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-t-2 border-blue-400 mb-4"></div>
-        <span className="text-gray-400 text-lg animate-pulse">Loading subject details...</span>
-      </main>
-    );
-  }
-
-  if (error || !subject) {
-    return (
-      <main className="min-h-screen bg-gray-950 text-gray-100 px-4 py-8 sm:p-6 md:p-12">
-        <div className="max-w-4xl mx-auto text-center py-16 sm:py-20 px-4 bg-gray-900 rounded-2xl border border-gray-800 shadow-xl">
-          <h2 className="text-2xl font-bold text-red-400 mb-4">Error</h2>
-          <p className="text-gray-300 mb-8 break-words">{error || "Subject not found."}</p>
-          <Link href="/" className="bg-blue-600 hover:bg-blue-500 text-white min-h-[44px] px-6 py-2.5 rounded-xl transition-colors inline-flex items-center justify-center font-medium">
-            &larr; Back to Home
-          </Link>
+      <main className="min-h-screen overflow-x-hidden bg-gray-950 px-4 py-8 text-gray-100 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
+        <div className="mx-auto max-w-6xl">
+          <QueryError />
         </div>
       </main>
     );
   }
+
+  if (!subjectRes.data) {
+    notFound();
+  }
+
+  const subject = subjectRes.data as Subject;
+  const papers = (papersRes.data ?? []) as Paper[];
+  const questions = (questionsRes.data ?? []) as AIQuestion[];
+  const sortedPapers = [...papers].sort((a, b) => {
+    if (b.year !== a.year) return b.year - a.year;
+    const examCmp = (a.exam_type || "").localeCompare(b.exam_type || "");
+    if (examCmp !== 0) return examCmp;
+    const timeA = a.uploaded_at ? new Date(a.uploaded_at).getTime() : 0;
+    const timeB = b.uploaded_at ? new Date(b.uploaded_at).getTime() : 0;
+    return timeA - timeB;
+  });
+  const counts: Record<string, number> = {};
+  for (const paper of sortedPapers) {
+    const key = `${paper.year}_${(paper.exam_type || "").toLowerCase()}`;
+    counts[key] = (counts[key] || 0) + 1;
+  }
+  const setIndex: Record<string, number> = {};
+  const papersWithLabels = sortedPapers.map((paper) => {
+    const key = `${paper.year}_${(paper.exam_type || "").toLowerCase()}`;
+    if (counts[key] > 1) {
+      setIndex[key] = (setIndex[key] || 0) + 1;
+      return { ...paper, set_label: `Set ${setIndex[key]}` };
+    }
+    return { ...paper, set_label: undefined };
+  });
 
   return (
-    <main className="min-h-screen bg-gray-950 text-gray-100 px-4 py-8 sm:p-6 md:p-12 overflow-x-hidden">
-      <div className="max-w-5xl mx-auto min-w-0">
-        <div className="mb-6 sm:mb-8">
-          <Link href="/" className="text-blue-400 hover:text-blue-300 font-medium inline-flex items-center min-h-[44px] py-2 px-1 -ml-1 transition-colors text-base">
-            &larr; Back to Home
+    <main className="min-h-screen overflow-x-hidden bg-gray-950 px-4 py-8 text-gray-100 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
+      <div className="mx-auto max-w-6xl min-w-0">
+        <div className="mb-6">
+          <Link
+            href="/"
+            className="inline-flex min-h-11 items-center px-1 py-2 text-base font-medium text-blue-400 transition-colors hover:text-blue-300"
+          >
+            ← Back
           </Link>
         </div>
 
-        <header className="mb-8 sm:mb-12 border-b border-gray-800 pb-6 sm:pb-8 min-w-0">
-          <h1 className="text-2xl sm:text-3xl md:text-5xl font-extrabold text-white mb-4 flex items-center gap-3 sm:gap-4 flex-wrap break-words min-w-0">
+        <header className="mb-10 min-w-0 border-b border-gray-800 pb-6 sm:mb-12 sm:pb-8">
+          <h1 className="mb-4 flex min-w-0 flex-wrap items-center gap-3 break-words text-3xl font-extrabold text-white sm:gap-4 lg:text-5xl">
             <span className="break-words">{subject.name}</span>
             {subject.code && (
-              <span className="bg-gray-800 text-blue-300 text-base sm:text-lg md:text-2xl font-mono px-3 py-1 rounded-lg border border-gray-700 break-all shrink-0">
+              <span className="shrink-0 break-all rounded-lg border border-gray-700 bg-gray-800 px-3 py-1 font-mono text-base text-blue-300 sm:text-lg lg:text-2xl">
                 {subject.code}
               </span>
             )}
           </h1>
           {subject.semester && (
-            <p className="text-gray-400 text-base sm:text-lg">
-              Semester: <span className="text-gray-200 font-semibold">{subject.semester}</span>
+            <p className="text-base text-gray-400 sm:text-lg">
+              Semester:{" "}
+              <span className="font-semibold text-gray-200">
+                {subject.semester}
+              </span>
             </p>
           )}
         </header>
 
         <section className="mb-12 sm:mb-16">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-100 mb-6 border-l-4 border-blue-500 pl-3 sm:pl-4">
+          <h2 className="mb-6 text-2xl font-bold text-gray-100">
             Previous Year Papers
           </h2>
-          
-          {papers.length === 0 ? (
-            <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 sm:p-8 text-center text-gray-400">
+          {papersWithLabels.length === 0 ? (
+            <div className="rounded-xl border border-gray-800 bg-gray-900 p-6 text-center text-gray-400 sm:p-8">
               No papers found for this subject yet.
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {papers.map((paper) => {
-                const filename = paper.file_url ? paper.file_url.split("/").pop()?.split("?")[0] : "";
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {papersWithLabels.map((paper) => {
+                const filename = paper.file_url
+                  ? paper.file_url.split("/").pop()?.split("?")[0]
+                  : "";
                 return (
-                  <div key={paper.id} className="bg-gray-900 rounded-xl border border-gray-800 p-5 sm:p-6 hover:border-gray-700 transition-colors shadow-lg flex flex-col justify-between min-w-0">
-                    <div className="flex justify-between items-start mb-4 gap-2 min-w-0">
+                  <div
+                    key={paper.id}
+                    className="flex min-w-0 flex-col justify-between rounded-xl border border-gray-800 bg-gray-900 p-5 shadow-lg transition-colors hover:border-gray-700 sm:p-6"
+                  >
+                    <div className="mb-4 flex min-w-0 items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-lg sm:text-xl font-bold text-gray-200 flex items-center gap-2 flex-wrap break-words">
+                        <h3 className="flex flex-wrap items-center gap-2 break-words text-xl font-bold text-gray-200">
                           <span>{paper.year}</span>
                           {paper.set_label && (
-                            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-900/40 text-blue-300 border border-blue-800/60 shrink-0">
+                            <span className="shrink-0 rounded border border-blue-800/60 bg-blue-900/40 px-2 py-0.5 text-xs font-semibold text-blue-300">
                               {paper.set_label}
                             </span>
                           )}
                         </h3>
-                        <p className="text-gray-400 text-sm sm:text-base capitalize break-words mt-1">
+                        <p className="mt-1 break-words text-base capitalize text-gray-400">
                           {paper.exam_type.replace("-", " ")}
                         </p>
                       </div>
                       {paper.ocr_status === "done" && (
-                        <span className="bg-green-900/30 text-green-400 text-xs px-2 py-1 rounded border border-green-800/50 shrink-0">
+                        <span className="shrink-0 rounded border border-green-800/50 bg-green-900/30 px-2 py-1 text-xs text-green-400">
                           OCR Done
                         </span>
                       )}
                     </div>
-                    <a 
-                      href={paper.file_url} 
-                      target="_blank" 
+                    <a
+                      href={paper.file_url}
+                      target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full text-center bg-gray-800 hover:bg-gray-700 text-blue-300 font-medium min-h-[44px] py-2.5 px-4 rounded-lg transition-colors border border-gray-700 flex items-center justify-center truncate"
+                      className="flex min-h-11 w-full items-center justify-center truncate rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-center font-medium text-blue-300 transition-colors hover:bg-gray-700"
                       title={filename ? `Download ${filename}` : "Download PDF"}
                     >
                       <span className="truncate">Download PDF</span>
@@ -198,33 +198,40 @@ export default function SubjectPage({ params }: { params: Promise<{ id: string }
         </section>
 
         <section>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-100 mb-6 border-l-4 border-purple-500 pl-3 sm:pl-4">
+          <h2 className="mb-6 text-2xl font-bold text-gray-100">
             AI Predicted Questions
           </h2>
-          
           {questions.length === 0 ? (
-            <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 sm:p-8 text-center text-gray-400">
-              No questions generated yet. Admins can generate questions from the upload panel.
+            <div className="rounded-xl border border-gray-800 bg-gray-900 p-6 text-center text-gray-400 sm:p-8">
+              No questions generated yet. Admins can generate questions from
+              the upload panel.
             </div>
           ) : (
-            <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden shadow-lg min-w-0">
+            <div className="min-w-0 overflow-hidden rounded-xl border border-gray-800 bg-gray-900 shadow-lg">
               <ul className="divide-y divide-gray-800">
-                {questions.map((q, index) => (
-                  <li key={index} className="p-4 sm:p-6 hover:bg-gray-800/50 transition-colors flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4 min-w-0">
-                    <span className="text-blue-400 font-mono text-lg sm:text-xl font-bold shrink-0">
+                {questions.map((question, index) => (
+                  <li
+                    key={`${question.generated_at}-${index}`}
+                    className="flex min-w-0 flex-col gap-3 p-4 transition-colors hover:bg-gray-800/50 sm:flex-row sm:items-start sm:gap-4 sm:p-6"
+                  >
+                    <span className="shrink-0 font-mono text-lg font-bold text-blue-400 sm:text-xl">
                       Q{index + 1}.
                     </span>
-                    <p className="text-gray-200 text-base sm:text-lg flex-1 leading-relaxed break-words min-w-0">
-                      {q.question}
+                    <p className="min-w-0 flex-1 break-words text-base leading-relaxed text-gray-200 sm:text-lg">
+                      {question.question}
                     </p>
-                    <div className="shrink-0 flex items-center gap-2 mt-1 sm:mt-0">
-                      <span className="text-gray-400 text-sm">Confidence:</span>
-                      <span className={`px-2.5 py-1 rounded text-sm font-semibold border ${
-                        q.confidence >= 0.8 ? 'bg-green-900/30 text-green-300 border-green-800/50' : 
-                        q.confidence >= 0.5 ? 'bg-yellow-900/30 text-yellow-300 border-yellow-800/50' : 
-                        'bg-red-900/30 text-red-300 border-red-800/50'
-                      }`}>
-                        {Math.round(q.confidence * 100)}%
+                    <div className="mt-1 flex shrink-0 items-center gap-2 sm:mt-0">
+                      <span className="text-sm text-gray-400">Confidence:</span>
+                      <span
+                        className={`rounded border px-2.5 py-1 text-sm font-semibold ${
+                          question.confidence >= 0.8
+                            ? "border-green-800/50 bg-green-900/30 text-green-300"
+                            : question.confidence >= 0.5
+                              ? "border-yellow-800/50 bg-yellow-900/30 text-yellow-300"
+                              : "border-red-800/50 bg-red-900/30 text-red-300"
+                        }`}
+                      >
+                        {Math.round(question.confidence * 100)}%
                       </span>
                     </div>
                   </li>
