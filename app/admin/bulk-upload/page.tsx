@@ -178,9 +178,25 @@ export default function BulkUploadPage() {
       // 1. Upload to storage: papers/unsorted/{random}_{timestamp}.pdf
       const rand = Math.random().toString(36).slice(2, 10);
       const filePath = `unsorted/${rand}_${Date.now()}.pdf`;
+      const signedUploadRes = await fetch("/api/admin/signed-upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: filePath }),
+      });
+      const signedUploadData = await signedUploadRes.json().catch(() => null);
+
+      if (!signedUploadRes.ok) {
+        updateItem(item.id, {
+          status: "error",
+          error: `Upload failed: ${signedUploadData?.error ?? "Failed to create signed upload URL"}`,
+        });
+        return;
+      }
+
+      const { path, token } = signedUploadData;
       const { error: uploadErr } = await supabase.storage
         .from("papers")
-        .upload(filePath, item.file);
+        .uploadToSignedUrl(path, token, item.file);
 
       if (uploadErr) {
         updateItem(item.id, {
@@ -327,19 +343,24 @@ export default function BulkUploadPage() {
         continue;
       }
 
-      const { error } = await supabase.from("papers").insert({
-        subject_id,
-        year,
-        exam_type,
-        file_url: item.file_url,
-        ocr_text: item.ocr_text ?? null,
-        ocr_status: "done",
+      const paperRes = await fetch("/api/admin/papers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject_id,
+          year,
+          exam_type,
+          file_url: item.file_url,
+          ocr_text: item.ocr_text ?? null,
+          ocr_status: "done",
+        }),
       });
+      const paperData = await paperRes.json().catch(() => null);
 
-      if (error) {
+      if (!paperRes.ok) {
         updateItem(item.id, {
           status: "error",
-          error: `DB insert failed: ${error.message}`,
+          error: `DB insert failed: ${paperData?.error ?? "Failed to insert paper"}`,
         });
       } else {
         updateItem(item.id, { status: "saved", selected: false });
