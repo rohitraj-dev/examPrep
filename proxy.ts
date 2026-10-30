@@ -11,7 +11,12 @@ export function proxy(request: NextRequest) {
   }
 
   // Allow admin auth APIs
-  if (pathname.startsWith("/api/admin/")) {
+  if (
+    pathname === "/api/admin/login" ||
+    pathname === "/api/admin/login/" ||
+    pathname === "/api/admin/logout" ||
+    pathname === "/api/admin/logout/"
+  ) {
     return NextResponse.next();
   }
 
@@ -55,6 +60,7 @@ export const config = {
     "/api/ocr",
     "/api/generate-questions",
     "/api/bulk/:path*",
+    "/api/admin/:path*",
   ],
 };
 
