@@ -121,10 +121,11 @@ export default function PapersList({
             const filename = paper.file_url
               ? paper.file_url.split("/").pop()?.split("?")[0]
               : "";
+            const isMidSem = paper.exam_type === "mid-sem";
             return (
               <div
                 key={paper.id}
-                className="flex min-w-0 flex-col justify-between rounded-xl border border-gray-800 light:border-gray-200 bg-gray-900 light:bg-white p-5 shadow-lg transition-colors hover:border-gray-700 light:hover:border-gray-300 sm:p-6"
+                className="flex min-w-0 flex-col justify-between rounded-xl border border-gray-800 light:border-gray-200 bg-gray-900 light:bg-white p-5 shadow-lg shadow-black/10 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-gray-700 light:hover:border-gray-300 hover:shadow-xl hover:shadow-black/20 light:hover:shadow-gray-300/50 sm:p-6"
               >
                 <div className="mb-4 flex min-w-0 items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
@@ -136,8 +137,35 @@ export default function PapersList({
                         </span>
                       )}
                     </h3>
-                    <p className="mt-1 break-words text-base capitalize text-gray-400 light:text-gray-600">
-                      {paper.exam_type.replace("-", " ")}
+                    <p className="mt-2 flex min-w-0 items-center gap-2 break-words text-sm font-medium capitalize text-gray-400 light:text-gray-600">
+                      <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-lg border border-gray-700 bg-gray-800 text-blue-300 light:border-gray-300 light:bg-gray-100 light:text-blue-700">
+                        {isMidSem ? (
+                          <svg
+                            aria-hidden="true"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                            className="size-4"
+                          >
+                            <rect x="4" y="5" width="16" height="15" rx="2" />
+                            <path d="M8 3v4m8-4v4M4 10h16M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01" />
+                          </svg>
+                        ) : (
+                          <svg
+                            aria-hidden="true"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
+                            className="size-4"
+                          >
+                            <path d="M4 6.5 12 4l8 2.5L12 9 4 6.5Z" />
+                            <path d="M7 8v5.5c0 1.4 2.2 2.5 5 2.5s5-1.1 5-2.5V8M20 7v6" />
+                          </svg>
+                        )}
+                      </span>
+                      <span className="min-w-0">{paper.exam_type.replace("-", " ")}</span>
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
