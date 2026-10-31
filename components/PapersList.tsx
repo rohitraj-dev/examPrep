@@ -31,6 +31,7 @@ export default function PapersList({
   const [year, setYear] = useState("all");
   const [examType, setExamType] = useState("all");
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
+  const [isVisible, setIsVisible] = useState(false);
   const years = useMemo(
     () => [...new Set(papers.map((paper) => paper.year))].sort((a, b) => b - a),
     [papers],
@@ -48,6 +49,7 @@ export default function PapersList({
 
   useEffect(() => {
     setBookmarkedIds(new Set(getBookmarks().map((paper) => paper.id)));
+    setIsVisible(true);
   }, []);
 
   const handleToggleBookmark = (paper: Paper) => {
@@ -64,7 +66,7 @@ export default function PapersList({
   };
 
   return (
-    <>
+    <div className={`transition-opacity duration-500 ease-out ${isVisible ? "opacity-100" : "opacity-0"}`}>
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="flex min-w-0 flex-col gap-2 text-sm font-medium text-gray-300 light:text-gray-700">
           Year
@@ -109,7 +111,7 @@ export default function PapersList({
                 setYear("all");
                 setExamType("all");
               }}
-              className="min-h-11 rounded-xl bg-blue-600 light:bg-blue-600 px-6 py-2.5 font-medium text-white transition-colors hover:bg-blue-500 light:hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400/60 light:focus:ring-blue-500/60"
+              className="min-h-11 rounded-xl bg-blue-600 light:bg-blue-600 px-6 py-2.5 font-medium text-white transition-all duration-200 hover:bg-blue-500 light:hover:bg-blue-700 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-400/60 light:focus:ring-blue-500/60"
             >
               Reset filters
             </button>
@@ -183,7 +185,7 @@ export default function PapersList({
                           : "Bookmark paper"
                       }
                       aria-pressed={bookmarkedIds.has(paper.id)}
-                      className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg text-yellow-400 light:text-yellow-600 transition-colors hover:bg-gray-800 light:hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400/60 light:focus:ring-blue-500/60"
+                      className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg text-yellow-400 light:text-yellow-600 transition-all duration-200 hover:bg-gray-800 light:hover:bg-gray-100 active:scale-90 focus:outline-none focus:ring-2 focus:ring-blue-400/60 light:focus:ring-blue-500/60"
                     >
                       <svg
                         aria-hidden="true"
@@ -202,7 +204,7 @@ export default function PapersList({
                   href={paper.file_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex min-h-11 w-full items-center justify-center truncate rounded-lg border border-gray-700 light:border-gray-300 bg-gray-800 light:bg-gray-100 px-4 py-2.5 text-center font-medium text-blue-300 light:text-blue-700 transition-colors hover:bg-gray-700 light:hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400/60 light:focus:ring-blue-500/60"
+                  className="flex min-h-11 w-full items-center justify-center truncate rounded-lg border border-gray-700 light:border-gray-300 bg-gray-800 light:bg-gray-100 px-4 py-2.5 text-center font-medium text-blue-300 light:text-blue-700 transition-all duration-200 hover:bg-gray-700 light:hover:bg-gray-200 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-400/60 light:focus:ring-blue-500/60"
                   title={filename ? `Download ${filename}` : "Download PDF"}
                 >
                   <span className="truncate">Download PDF</span>
@@ -212,6 +214,6 @@ export default function PapersList({
           })}
         </div>
       )}
-    </>
+    </div>
   );
 }

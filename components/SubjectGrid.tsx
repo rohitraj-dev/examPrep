@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 
 type Subject = {
@@ -25,6 +26,7 @@ export default function SubjectGrid({
   papers: Paper[];
 }) {
   const [search, setSearch] = useState("");
+  const [isVisible, setIsVisible] = useState(false);
   const normalizedSearch = search.trim().toLowerCase();
   const filteredSubjects = useMemo(
     () =>
@@ -53,8 +55,12 @@ export default function SubjectGrid({
   );
   const hasResults = filteredSubjects.length > 0 || filteredPapers.length > 0;
 
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
+
   return (
-    <>
+    <div className={`transition-opacity duration-500 ease-out ${isVisible ? "opacity-100" : "opacity-0"}`}>
       <div className="mb-6">
         <label htmlFor="subject-search" className="sr-only">
           Search subjects
@@ -80,7 +86,7 @@ export default function SubjectGrid({
           <button
             type="button"
             onClick={() => setSearch("")}
-            className="min-h-11 rounded-xl bg-blue-600 light:bg-blue-600 px-6 py-2.5 font-medium text-white transition-colors hover:bg-blue-500 light:hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400/60 light:focus:ring-blue-500/60"
+            className="min-h-11 rounded-xl bg-blue-600 light:bg-blue-600 px-6 py-2.5 font-medium text-white transition-all duration-200 hover:bg-blue-500 light:hover:bg-blue-700 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-400/60 light:focus:ring-blue-500/60"
           >
             Clear search
           </button>
@@ -122,7 +128,7 @@ export default function SubjectGrid({
 
                     <Link
                       href={`/subject/${subject.id}`}
-                      className="mt-auto flex min-h-11 w-full items-center justify-center rounded-xl bg-blue-600 light:bg-blue-600 px-4 py-2.5 text-center font-medium text-white shadow-lg shadow-blue-900/20 light:shadow-blue-200/50 transition-colors hover:bg-blue-500 light:hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400/60 light:focus:ring-blue-500/60"
+                      className="mt-auto flex min-h-11 w-full items-center justify-center rounded-xl bg-blue-600 light:bg-blue-600 px-4 py-2.5 text-center font-medium text-white shadow-lg shadow-blue-900/20 light:shadow-blue-200/50 transition-all duration-200 hover:bg-blue-500 light:hover:bg-blue-700 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-400/60 light:focus:ring-blue-500/60"
                     >
                       View Papers
                     </Link>
@@ -149,7 +155,7 @@ export default function SubjectGrid({
                     <Link
                       key={paper.id}
                       href={`/subject/${paper.subject_id}`}
-                      className="group flex min-w-0 items-center justify-between gap-4 rounded-xl border border-gray-800 light:border-gray-200 bg-gray-900 light:bg-white p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-700 light:hover:border-blue-300 hover:shadow-lg sm:p-5"
+                      className="group flex min-w-0 items-center justify-between gap-4 rounded-xl border border-gray-800 light:border-gray-200 bg-gray-900 light:bg-white p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-700 light:hover:border-blue-300 hover:shadow-lg active:scale-[0.99] sm:p-5"
                     >
                       <div className="min-w-0">
                         <h3 className="truncate text-base font-semibold text-gray-100 light:text-gray-900">
@@ -170,6 +176,6 @@ export default function SubjectGrid({
           )}
         </div>
       )}
-    </>
+    </div>
   );
 }

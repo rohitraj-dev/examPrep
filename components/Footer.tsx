@@ -20,14 +20,14 @@ export default function Footer() {
           href="https://forms.gle/cL7FhSVQXziHkPPT8"
           target="_blank"
           rel="noopener noreferrer"
-          className="font-medium text-blue-400 light:text-blue-600 underline decoration-blue-400/50 light:decoration-blue-600/50 underline-offset-4 transition-colors hover:text-blue-300 light:hover:text-blue-700"
+          className="font-medium text-blue-400 light:text-blue-600 underline decoration-blue-400/50 light:decoration-blue-600/50 underline-offset-4 transition-colors hover:text-blue-300 light:hover:text-blue-700 active:opacity-80"
         >
           Report a problem / Request a paper
         </a>
       </p>
       <a
         href="/bookmarks"
-        className="mt-4 inline-block font-medium text-blue-400 underline decoration-blue-400/50 underline-offset-4 transition-colors hover:text-blue-300 light:text-blue-600 light:decoration-blue-600/50 light:hover:text-blue-700"
+        className="mt-4 inline-block font-medium text-blue-400 underline decoration-blue-400/50 underline-offset-4 transition-colors hover:text-blue-300 light:text-blue-600 light:decoration-blue-600/50 light:hover:text-blue-700 active:scale-[0.98]"
       >
         Bookmarks
       </a>
@@ -36,7 +36,7 @@ export default function Footer() {
         onClick={() => cycleTheme()}
         aria-label={`Switch theme from ${theme} mode`}
         title={`Theme: ${theme}`}
-        className="mx-auto mt-5 inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-700 light:border-gray-300 bg-gray-900 light:bg-gray-100 px-3 text-gray-300 light:text-gray-700 transition-colors hover:border-gray-600 light:hover:border-gray-400 hover:bg-gray-800 light:hover:bg-gray-200 hover:text-white light:hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/60 light:focus:ring-blue-500/60"
+        className="mx-auto mt-5 inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-700 light:border-gray-300 bg-gray-900 light:bg-gray-100 px-3 text-gray-300 light:text-gray-700 transition-all duration-200 hover:border-gray-600 light:hover:border-gray-400 hover:bg-gray-800 light:hover:bg-gray-200 hover:text-white light:hover:text-gray-900 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-400/60 light:focus:ring-blue-500/60"
       >
         {theme === "light" ? (
           <svg
