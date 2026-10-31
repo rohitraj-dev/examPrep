@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://examprep-gamma.vercel.app"),
   title: {
-    default: "ExamPrep — BCA 3rd Semester PYQs & AI Practice Questions",
+    default: "ExamPrep",
     template: "%s | ExamPrep",
   },
   description:
