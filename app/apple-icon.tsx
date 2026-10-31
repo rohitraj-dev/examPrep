@@ -18,12 +18,16 @@ export default function AppleIcon() {
           alignItems: "center",
           justifyContent: "center",
           background: "#030712",
-          color: "#93c5fd",
-          fontSize: 68,
-          fontWeight: 800,
+          border: "5px solid #1e3a8a",
+          borderRadius: 44,
+          color: "#3b82f6",
+          fontFamily: "Arial, Helvetica, sans-serif",
+          fontSize: 132,
+          fontWeight: 900,
+          lineHeight: 1,
         }}
       >
-        EP
+        E
       </div>
     ),
     size,

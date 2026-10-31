@@ -18,12 +18,16 @@ export default function Icon() {
           alignItems: "center",
           justifyContent: "center",
           background: "#030712",
-          color: "#93c5fd",
-          fontSize: 20,
-          fontWeight: 800,
+          border: "1px solid #1e3a8a",
+          borderRadius: 8,
+          color: "#3b82f6",
+          fontFamily: "Arial, Helvetica, sans-serif",
+          fontSize: 23,
+          fontWeight: 900,
+          lineHeight: 1,
         }}
       >
-        EP
+        E
       </div>
     ),
     size,
