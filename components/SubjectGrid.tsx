@@ -71,7 +71,7 @@ export default function SubjectGrid({
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Search by subject, year, or exam type"
-          className="min-h-11 w-full rounded-xl border border-gray-700 light:border-gray-300 bg-gray-900 light:bg-white px-4 py-2.5 text-base text-gray-100 light:text-gray-900 outline-none transition-colors placeholder:text-gray-500 light:placeholder:text-gray-400 focus:border-blue-500 light:focus:border-blue-600 focus:ring-2 focus:ring-blue-500/30 light:focus:ring-blue-500/30"
+          className="min-h-11 w-full rounded-xl border border-gray-700 bg-gray-900 px-4 py-2.5 text-base text-gray-100 outline-none transition-colors placeholder:text-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 light:border-gray-300 light:bg-gray-50 light:text-gray-900 light:placeholder:text-gray-500 light:focus:border-blue-600 light:focus:ring-blue-500/30"
         />
       </div>
 
