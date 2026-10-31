@@ -25,6 +25,12 @@ export default function Footer() {
           Report a problem / Request a paper
         </a>
       </p>
+      <a
+        href="/bookmarks"
+        className="mt-4 inline-block font-medium text-blue-400 underline decoration-blue-400/50 underline-offset-4 transition-colors hover:text-blue-300 light:text-blue-600 light:decoration-blue-600/50 light:hover:text-blue-700"
+      >
+        Bookmarks
+      </a>
       <button
         type="button"
         onClick={() => cycleTheme()}

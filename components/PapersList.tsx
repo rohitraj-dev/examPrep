@@ -1,9 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  getBookmarks,
+  toggleBookmark,
+  type BookmarkedPaper,
+} from "@/lib/bookmarks";
 
 type Paper = {
   id: string;
+  subject_id?: string;
+  subject_name?: string;
   year: number;
   exam_type: string;
   file_url: string;
@@ -12,9 +19,18 @@ type Paper = {
   set_label?: string;
 };
 
-export default function PapersList({ papers }: { papers: Paper[] }) {
+export default function PapersList({
+  papers,
+  subjectId,
+  subjectName,
+}: {
+  papers: Paper[];
+  subjectId: string;
+  subjectName: string;
+}) {
   const [year, setYear] = useState("all");
   const [examType, setExamType] = useState("all");
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
   const years = useMemo(
     () => [...new Set(papers.map((paper) => paper.year))].sort((a, b) => b - a),
     [papers],
@@ -29,6 +45,23 @@ export default function PapersList({ papers }: { papers: Paper[] }) {
     [examType, papers, year],
   );
   const hasFilters = year !== "all" || examType !== "all";
+
+  useEffect(() => {
+    setBookmarkedIds(new Set(getBookmarks().map((paper) => paper.id)));
+  }, []);
+
+  const handleToggleBookmark = (paper: Paper) => {
+    const bookmark: BookmarkedPaper = {
+      id: paper.id,
+      subject_id: subjectId,
+      subject_name: subjectName,
+      year: paper.year,
+      exam_type: paper.exam_type,
+      file_url: paper.file_url,
+    };
+    const nextBookmarks = toggleBookmark(bookmark);
+    setBookmarkedIds(new Set(nextBookmarks.map((item) => item.id)));
+  };
 
   return (
     <>
@@ -107,11 +140,35 @@ export default function PapersList({ papers }: { papers: Paper[] }) {
                       {paper.exam_type.replace("-", " ")}
                     </p>
                   </div>
-                  {paper.ocr_status === "done" && (
-                    <span className="shrink-0 rounded border border-green-800/50 light:border-green-200 bg-green-900/30 light:bg-green-100 px-2 py-1 text-xs text-green-400 light:text-green-700">
-                      OCR Done
-                    </span>
-                  )}
+                  <div className="flex shrink-0 items-center gap-2">
+                    {paper.ocr_status === "done" && (
+                      <span className="rounded border border-green-800/50 light:border-green-200 bg-green-900/30 light:bg-green-100 px-2 py-1 text-xs text-green-400 light:text-green-700">
+                        OCR Done
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleToggleBookmark(paper)}
+                      aria-label={
+                        bookmarkedIds.has(paper.id)
+                          ? "Remove bookmark"
+                          : "Bookmark paper"
+                      }
+                      aria-pressed={bookmarkedIds.has(paper.id)}
+                      className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg text-yellow-400 light:text-yellow-600 transition-colors hover:bg-gray-800 light:hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400/60 light:focus:ring-blue-500/60"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        className="size-5"
+                        fill={bookmarkedIds.has(paper.id) ? "currentColor" : "none"}
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="m12 3 2.78 5.63 6.22.9-4.5 4.38 1.06 6.19L12 17.18l-5.56 2.92 1.06-6.19L3 9.53l6.22-.9L12 3Z" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
                 <a
                   href={paper.file_url}

@@ -178,7 +178,11 @@ export default async function SubjectPage({
           <h2 className="mb-6 text-2xl font-bold text-gray-100">
             Previous Year Papers
           </h2>
-          <PapersList papers={papersWithLabels} />
+          <PapersList
+            papers={papersWithLabels}
+            subjectId={id}
+            subjectName={subject.name}
+          />
           <p className="mt-4 text-sm text-gray-400">
             Missing a paper for this subject?{" "}
             <a
