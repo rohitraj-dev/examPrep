@@ -12,19 +12,19 @@ export default function Header() {
   }
 
   return (
-    <header className="border-b border-gray-800 light:border-gray-200 bg-gray-950 light:bg-white">
-      <div className="mx-auto flex min-h-14 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-30 border-b border-gray-800/80 bg-gray-950/90 shadow-sm backdrop-blur-md light:border-gray-200/80 light:bg-white/90">
+      <div className="mx-auto flex min-h-14 w-full max-w-6xl items-center justify-between gap-2 px-3 py-2 sm:gap-3 sm:px-6 lg:px-8">
         <a
           href="/"
-          className="min-w-0 truncate text-lg font-extrabold tracking-tight text-blue-300 transition-colors hover:text-blue-200 light:text-blue-700 light:hover:text-blue-800"
+          className="min-w-0 max-w-[48vw] truncate rounded-md px-1.5 py-1 text-lg font-extrabold tracking-tight text-blue-300 transition-colors hover:bg-gray-900/70 hover:text-blue-200 active:scale-[0.98] light:text-blue-700 light:hover:bg-gray-100/80 light:hover:text-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 light:focus-visible:ring-blue-500/60 sm:max-w-none"
         >
           ExamPrep
         </a>
 
-        <nav aria-label="Primary navigation" className="flex shrink-0 items-center gap-2">
+        <nav aria-label="Primary navigation" className="flex shrink-0 items-center gap-1 sm:gap-2">
           <a
             href="/bookmarks"
-            className="inline-flex min-h-10 items-center rounded-lg px-2.5 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-900 hover:text-white light:text-gray-700 light:hover:bg-gray-100 light:hover:text-gray-950 sm:px-3"
+            className="inline-flex min-h-10 items-center rounded-lg px-2.5 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-900 hover:text-white active:scale-[0.98] light:text-gray-700 light:hover:bg-gray-100 light:hover:text-gray-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 light:focus-visible:ring-blue-500/60 sm:px-3"
           >
             Bookmarks
           </a>
@@ -33,7 +33,7 @@ export default function Header() {
             onClick={() => cycleTheme()}
             aria-label={`Switch theme from ${theme} mode`}
             title={`Theme: ${theme}`}
-            className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg border border-gray-700 bg-gray-900 text-gray-300 transition-colors hover:border-gray-600 hover:bg-gray-800 hover:text-white light:border-gray-300 light:bg-gray-100 light:text-gray-700 light:hover:border-gray-400 light:hover:bg-gray-200 light:hover:text-gray-950 focus:outline-none focus:ring-2 focus:ring-blue-400/60 light:focus:ring-blue-500/60"
+            className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg border border-gray-700 bg-gray-900 text-gray-300 transition-colors hover:border-gray-600 hover:bg-gray-800 hover:text-white active:scale-[0.96] light:border-gray-300 light:bg-gray-100 light:text-gray-700 light:hover:border-gray-400 light:hover:bg-gray-200 light:hover:text-gray-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 light:focus-visible:ring-blue-500/60"
           >
             {theme === "light" ? (
               <svg
