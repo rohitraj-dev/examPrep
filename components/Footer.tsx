@@ -13,31 +13,33 @@ export default function Footer() {
   }
 
   return (
-    <footer className="border-t border-gray-800 light:border-gray-200 bg-gray-950 light:bg-white px-4 py-8 text-center text-sm text-gray-400 light:text-gray-600 sm:px-6">
-      <p>
+    <footer className="border-t border-gray-800/80 bg-gray-950 px-4 pb-4 pt-10 text-center text-sm text-gray-400 light:border-gray-200/80 light:bg-white light:text-gray-600 sm:px-6 sm:pb-6 sm:pt-12">
+      <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-6">
+      <p className="max-w-xl leading-6">
         Missing a paper or found a problem?{" "}
         <a
           href="https://forms.gle/cL7FhSVQXziHkPPT8"
           target="_blank"
           rel="noopener noreferrer"
-          className="font-medium text-blue-400 light:text-blue-600 underline decoration-blue-400/50 light:decoration-blue-600/50 underline-offset-4 transition-colors hover:text-blue-300 light:hover:text-blue-700 active:opacity-80"
+          className="font-medium text-blue-400 underline decoration-blue-400/50 underline-offset-4 transition-colors hover:text-blue-300 active:opacity-80 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 light:text-blue-600 light:decoration-blue-600/50 light:hover:text-blue-700 light:focus-visible:ring-blue-500/60"
         >
           Report a problem / Request a paper
         </a>
       </p>
-      <a
-        href="/bookmarks"
-        className="mt-4 inline-block font-medium text-blue-400 underline decoration-blue-400/50 underline-offset-4 transition-colors hover:text-blue-300 light:text-blue-600 light:decoration-blue-600/50 light:hover:text-blue-700 active:scale-[0.98]"
-      >
-        Bookmarks
-      </a>
-      <button
+      <nav aria-label="Footer navigation" className="flex flex-col items-center gap-2 sm:flex-row sm:gap-3">
+        <a
+          href="/bookmarks"
+          className="inline-flex min-h-10 items-center rounded-lg px-3 py-1 font-medium text-blue-400 underline decoration-blue-400/50 underline-offset-4 transition-colors hover:bg-gray-900 hover:text-blue-300 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 light:text-blue-600 light:decoration-blue-600/50 light:hover:bg-gray-100 light:hover:text-blue-700 light:focus-visible:ring-blue-500/60"
+        >
+          Bookmarks
+        </a>
+        <button
         type="button"
         onClick={() => cycleTheme()}
         aria-label={`Switch theme from ${theme} mode`}
         title={`Theme: ${theme}`}
-        className="mx-auto mt-5 inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-700 light:border-gray-300 bg-gray-900 light:bg-gray-100 px-3 text-gray-300 light:text-gray-700 transition-all duration-200 hover:border-gray-600 light:hover:border-gray-400 hover:bg-gray-800 light:hover:bg-gray-200 hover:text-white light:hover:text-gray-900 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-400/60 light:focus:ring-blue-500/60"
-      >
+        className="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-700 bg-gray-900 px-3 text-gray-300 transition-all duration-200 hover:border-gray-600 hover:bg-gray-800 hover:text-white active:scale-[0.96] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 light:border-gray-300 light:bg-gray-100 light:text-gray-700 light:hover:border-gray-400 light:hover:bg-gray-200 light:hover:text-gray-950 light:focus-visible:ring-blue-500/60"
+        >
         {theme === "light" ? (
           <svg
             aria-hidden="true"
@@ -62,8 +64,10 @@ export default function Footer() {
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" />
           </svg>
         )}
-      </button>
+        </button>
+      </nav>
       <InstallHint />
+      </div>
     </footer>
   );
 }
