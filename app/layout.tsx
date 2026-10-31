@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import Footer from "@/components/Footer";
+import ThemeProvider from "@/components/ThemeProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -57,16 +58,39 @@ export const viewport: Viewport = {
   themeColor: "#030712",
 };
 
+const themeScript = `
+  (() => {
+    try {
+      const savedTheme = localStorage.getItem("theme");
+      const theme =
+        savedTheme === "light" || savedTheme === "dark" || savedTheme === "system"
+          ? savedTheme
+          : "system";
+      const isDark =
+        theme === "dark" ||
+        (theme === "system" &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches);
+      document.documentElement.classList.toggle("dark", isDark);
+    } catch {}
+  })();
+`;
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className="min-h-full flex flex-col">
-        {children}
-        <Footer />
-        <Analytics />
+        <ThemeProvider>
+          {children}
+          <Footer />
+          <Analytics />
+        </ThemeProvider>
       </body>
     </html>
   );

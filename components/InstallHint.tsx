@@ -81,8 +81,8 @@ export default function InstallHint() {
   }
 
   return (
-    <div className="mt-6 flex flex-col items-center gap-3 rounded-xl border border-blue-900/60 bg-blue-950/30 p-4 text-left sm:flex-row sm:justify-between">
-      <p className="text-sm text-gray-300">
+    <div className="mt-6 flex flex-col items-center gap-3 rounded-xl border border-blue-900/60 light:border-blue-200 bg-blue-950/30 light:bg-blue-50 p-4 text-left sm:flex-row sm:justify-between">
+      <p className="text-sm text-gray-300 light:text-gray-700">
         {isIos ? "Tap Share → Add to Home Screen" : "Install ExamPrep for quick access."}
       </p>
       <div className="flex shrink-0 items-center gap-3">
@@ -90,7 +90,7 @@ export default function InstallHint() {
           <button
             type="button"
             onClick={install}
-            className="min-h-10 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
+            className="min-h-10 rounded-lg bg-blue-600 light:bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-500 light:hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400/60 light:focus:ring-blue-500/60"
           >
             Install app
           </button>
@@ -99,7 +99,7 @@ export default function InstallHint() {
           type="button"
           onClick={dismiss}
           aria-label="Dismiss install app hint"
-          className="min-h-10 rounded-lg px-2 py-2 text-gray-400 transition-colors hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
+          className="min-h-10 rounded-lg px-2 py-2 text-gray-400 light:text-gray-600 transition-colors hover:text-gray-200 light:hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400/60 light:focus:ring-blue-500/60"
         >
           Dismiss
         </button>
