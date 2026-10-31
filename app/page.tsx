@@ -2,10 +2,16 @@ import { supabase } from "@/lib/supabase";
 import SubjectGrid from "@/components/SubjectGrid";
 
 export default async function Home() {
-  const { data: subjects, error } = await supabase
-    .from("subjects")
-    .select("id, name, code, semester")
-    .order("name");
+  const [{ data: subjects, error: subjectsError }, { data: papers, error: papersError }] =
+    await Promise.all([
+      supabase
+        .from("subjects")
+        .select("id, name, code, semester")
+        .order("name"),
+      supabase
+        .from("papers")
+        .select("id, subject_id, year, exam_type"),
+    ]);
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-gray-950 px-4 py-8 text-gray-100 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
@@ -20,7 +26,7 @@ export default async function Home() {
           </p>
         </header>
 
-        {error ? (
+        {subjectsError || papersError ? (
           <div className="rounded-2xl border border-red-900/60 bg-gray-900 px-4 py-12 text-center shadow-xl sm:px-8">
             <h2 className="mb-2 text-xl font-bold text-red-400 sm:text-2xl">
               Unable to load subjects
@@ -40,7 +46,7 @@ export default async function Home() {
             </p>
           </div>
         ) : (
-          <SubjectGrid subjects={subjects} />
+          <SubjectGrid subjects={subjects} papers={papers ?? []} />
         )}
       </div>
     </main>
