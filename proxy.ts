@@ -60,6 +60,7 @@ export const config = {
     "/api/ocr",
     "/api/generate-questions",
     "/api/bulk/:path*",
+    "/api/ebook/:path*",
     "/api/admin/:path*",
   ],
 };
