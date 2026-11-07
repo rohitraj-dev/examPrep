@@ -11,8 +11,31 @@ type Subject = {
 
 type Status = "idle" | "loading" | "success" | "error";
 
+type Chapter = {
+  id: string;
+  chapter_title: string;
+  subject_id: string;
+  order_index: number;
+  subject_name: string;
+  mcq_count: number;
+};
+
+type ChapterMessage = {
+  type: "success" | "error";
+  text: string;
+};
+
 export default function EbookUploadPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [chaptersLoading, setChaptersLoading] = useState(true);
+  const [chaptersError, setChaptersError] = useState("");
+  const [generatingChapters, setGeneratingChapters] = useState<
+    Record<string, boolean>
+  >({});
+  const [chapterMessages, setChapterMessages] = useState<
+    Record<string, ChapterMessage>
+  >({});
   const [selectedSubjectId, setSelectedSubjectId] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [startingOrderIndex, setStartingOrderIndex] = useState(0);
@@ -31,6 +54,30 @@ export default function EbookUploadPage() {
     }
 
     fetchSubjects();
+
+    async function fetchChapters() {
+      try {
+        const response = await fetch("/api/admin/ebook-chapters");
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok || !Array.isArray(data)) {
+          throw new Error(data?.error || "Failed to load chapters.");
+        }
+
+        setChapters(data as Chapter[]);
+      } catch (error) {
+        console.error(error);
+        setChaptersError(
+          error instanceof Error
+            ? error.message
+            : "Failed to load chapters.",
+        );
+      } finally {
+        setChaptersLoading(false);
+      }
+    }
+
+    fetchChapters();
   }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -73,6 +120,61 @@ export default function EbookUploadPage() {
           ? error.message
           : "An unexpected error occurred.",
       );
+    }
+  };
+
+  const handleGenerateMcqs = async (chapterId: string) => {
+    setGeneratingChapters((current) => ({ ...current, [chapterId]: true }));
+    setChapterMessages((current) => {
+      const next = { ...current };
+      delete next[chapterId];
+      return next;
+    });
+
+    try {
+      const response = await fetch("/api/ebook/generate-mcqs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chapter_id: chapterId }),
+      });
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error || "Failed to generate MCQs.");
+      }
+
+      setChapters((current) =>
+        current.map((chapter) =>
+          chapter.id === chapterId
+            ? { ...chapter, mcq_count: chapter.mcq_count + data.count }
+            : chapter,
+        ),
+      );
+      setChapterMessages((current) => ({
+        ...current,
+        [chapterId]: {
+          type: "success",
+          text: `Generated ${data.count} new MCQs.`,
+        },
+      }));
+    } catch (error) {
+      console.error(error);
+      setChapterMessages((current) => ({
+        ...current,
+        [chapterId]: {
+          type: "error",
+          text:
+            error instanceof Error
+              ? error.message
+              : "Failed to generate MCQs.",
+        },
+      }));
+    } finally {
+      setGeneratingChapters((current) => {
+        const next = { ...current };
+        delete next[chapterId];
+        return next;
+      });
     }
   };
 
@@ -189,6 +291,90 @@ export default function EbookUploadPage() {
             {status === "loading" ? "Processing ebook..." : "Process Ebook"}
           </button>
         </form>
+
+        <section className="mt-8">
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Chapters
+            </h2>
+            <p className="mt-1 text-sm text-gray-600 dark:text-neutral-400">
+              Generate practice questions for each uploaded chapter.
+            </p>
+          </div>
+
+          {chaptersLoading && (
+            <div className="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-600 shadow-md dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400">
+              Loading chapters...
+            </div>
+          )}
+
+          {!chaptersLoading && chaptersError && (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-300">
+              {chaptersError}
+            </div>
+          )}
+
+          {!chaptersLoading && !chaptersError && chapters.length === 0 && (
+            <div className="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-600 shadow-md dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400">
+              No chapters have been uploaded yet.
+            </div>
+          )}
+
+          {!chaptersLoading && !chaptersError && chapters.length > 0 && (
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-md dark:border-neutral-800 dark:bg-neutral-900">
+              <div className="divide-y divide-gray-200 dark:divide-neutral-800">
+                {chapters.map((chapter) => {
+                  const isGenerating = generatingChapters[chapter.id] === true;
+                  const chapterMessage = chapterMessages[chapter.id];
+
+                  return (
+                    <div
+                      key={chapter.id}
+                      className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-neutral-500">
+                          {chapter.subject_name}
+                        </p>
+                        <h3 className="mt-1 font-medium text-gray-900 dark:text-neutral-100">
+                          {chapter.chapter_title}
+                        </h3>
+                        <p className="mt-1 text-sm text-gray-600 dark:text-neutral-400">
+                          {chapter.mcq_count} MCQs
+                        </p>
+                        {chapterMessage && (
+                          <p
+                            className={`mt-2 text-sm ${
+                              chapterMessage.type === "success"
+                                ? "text-green-700 dark:text-green-300"
+                                : "text-red-700 dark:text-red-300"
+                            }`}
+                          >
+                            {chapterMessage.text}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleGenerateMcqs(chapter.id)}
+                        disabled={isGenerating}
+                        className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {isGenerating && (
+                          <span
+                            className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                            aria-hidden="true"
+                          />
+                        )}
+                        {isGenerating ? "Generating..." : "Generate MCQs"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );
