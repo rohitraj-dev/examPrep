@@ -1,16 +1,8 @@
 import { NextResponse } from "next/server";
-import { Agent, setGlobalDispatcher } from "undici";
-import { GEMINI_MODEL } from "@/lib/gemini";
+import { PDFParse } from "pdf-parse";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-
-setGlobalDispatcher(new Agent({ headersTimeout: 600000, bodyTimeout: 600000 }));
-
-type GeminiChapter = {
-  chapter_title: string;
-  content: string;
-};
 
 export const runtime = "nodejs";
 
@@ -59,106 +51,29 @@ export async function POST(request: Request) {
       );
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json(
-        { success: false, error: "GEMINI_API_KEY is not configured" },
-        { status: 500 },
-      );
-    }
-
-    const pdfBuffer = await file.arrayBuffer();
-    const base64Data = Buffer.from(pdfBuffer).toString("base64");
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
-    const prompt = `Extract the complete book from this PDF as a JSON array of chapters. Each chapter must have exactly two string fields: "chapter_title" and "content". "content" must contain the full text of that chapter, preserving the original wording and paragraphs as much as possible. Include every chapter in the book and do not summarize, omit, or combine chapters. Return ONLY valid JSON with no markdown, code fences, or explanation.`;
-
-    const geminiResponse = await fetch(geminiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                inline_data: {
-                  mime_type: "application/pdf",
-                  data: base64Data,
-                },
-              },
-              { text: prompt },
-            ],
-          },
-        ],
-      }),
-    });
-
-    if (!geminiResponse.ok) {
-      const errorText = await geminiResponse.text();
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Gemini API error ${geminiResponse.status}: ${errorText}`,
-        },
-        { status: geminiResponse.status },
-      );
-    }
-
-    const geminiData = await geminiResponse.json();
-    const responseText =
-      geminiData.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-    const jsonText = responseText
-      .replace(/^```(?:json)?\s*/i, "")
-      .replace(/\s*```\s*$/, "")
-      .trim();
-
-    let chapters: GeminiChapter[];
+    const parser = new PDFParse({ data: await file.arrayBuffer() });
+    let extractedText: string;
     try {
-      chapters = JSON.parse(jsonText);
-    } catch {
-      return NextResponse.json(
-        { success: false, error: "Gemini returned invalid JSON", raw: responseText },
-        { status: 422 },
-      );
+      const textResult = await parser.getText();
+      extractedText = textResult.text;
+    } finally {
+      await parser.destroy();
     }
-
-    if (
-      !Array.isArray(chapters) ||
-      chapters.length === 0 ||
-      chapters.some(
-        (chapter) =>
-          !chapter ||
-          typeof chapter.chapter_title !== "string" ||
-          !chapter.chapter_title.trim() ||
-          typeof chapter.content !== "string" ||
-          !chapter.content.trim(),
-      )
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            "Gemini response must be a non-empty array of chapters with chapter_title and content strings",
-        },
-        { status: 422 },
-      );
-    }
-
-    const rows = chapters.map((chapter, index) => ({
-      subject_id: subjectId,
-      chapter_title: chapter.chapter_title.trim(),
-      content: chapter.content,
-      order_index: startingOrderIndex + index,
-    }));
 
     const { error: insertError } = await supabaseAdmin
       .from("ebook_chapters")
-      .insert(rows);
+      .insert({
+        subject_id: subjectId,
+        chapter_title: file.name,
+        content: extractedText,
+        order_index: startingOrderIndex,
+      });
 
     if (insertError) {
       throw new Error(`Failed to insert ebook chapters: ${insertError.message}`);
     }
 
-    return NextResponse.json({ success: true, count: rows.length });
+    return NextResponse.json({ success: true, count: 1 });
   } catch (error) {
     console.error("Ebook processing error:", error);
     return NextResponse.json(
