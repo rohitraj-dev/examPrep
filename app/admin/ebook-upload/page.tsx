@@ -146,7 +146,7 @@ export default function EbookUploadPage() {
       setChapters((current) =>
         current.map((chapter) =>
           chapter.id === chapterId
-            ? { ...chapter, mcq_count: chapter.mcq_count + data.count }
+            ? { ...chapter, mcq_count: data.count }
             : chapter,
         ),
       );

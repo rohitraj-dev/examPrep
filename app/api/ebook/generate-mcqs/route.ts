@@ -154,6 +154,15 @@ ${chapter.content}`;
       order_index: index,
     }));
 
+    const { error: deleteError } = await supabaseAdmin
+      .from("ebook_mcqs")
+      .delete()
+      .eq("chapter_id", chapterId);
+
+    if (deleteError) {
+      throw new Error(`Failed to replace existing MCQs: ${deleteError.message}`);
+    }
+
     const { error: insertError } = await supabaseAdmin
       .from("ebook_mcqs")
       .insert(rows);
