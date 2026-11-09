@@ -10,6 +10,11 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Allow public ebook MCQs
+  if (pathname === "/api/ebook/mcqs" || pathname === "/api/ebook/mcqs/") {
+    return NextResponse.next();
+  }
+
   // Allow admin auth APIs
   if (
     pathname === "/api/admin/login" ||
