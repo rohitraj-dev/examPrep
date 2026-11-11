@@ -18,6 +18,7 @@ type Chapter = {
   order_index: number;
   subject_name: string;
   mcq_count: number;
+  definitions_count: number;
 };
 
 type ChapterMessage = {
@@ -31,6 +32,9 @@ export default function EbookUploadPage() {
   const [chaptersLoading, setChaptersLoading] = useState(true);
   const [chaptersError, setChaptersError] = useState("");
   const [generatingChapters, setGeneratingChapters] = useState<
+    Record<string, boolean>
+  >({});
+  const [generatingDefinitions, setGeneratingDefinitions] = useState<
     Record<string, boolean>
   >({});
   const [chapterMessages, setChapterMessages] = useState<
@@ -171,6 +175,61 @@ export default function EbookUploadPage() {
       }));
     } finally {
       setGeneratingChapters((current) => {
+        const next = { ...current };
+        delete next[chapterId];
+        return next;
+      });
+    }
+  };
+
+  const handleGenerateDefinitions = async (chapterId: string) => {
+    setGeneratingDefinitions((current) => ({ ...current, [chapterId]: true }));
+    setChapterMessages((current) => {
+      const next = { ...current };
+      delete next[chapterId];
+      return next;
+    });
+
+    try {
+      const response = await fetch("/api/ebook/generate-definitions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chapter_id: chapterId }),
+      });
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error || "Failed to generate definitions.");
+      }
+
+      setChapters((current) =>
+        current.map((chapter) =>
+          chapter.id === chapterId
+            ? { ...chapter, definitions_count: data.count }
+            : chapter,
+        ),
+      );
+      setChapterMessages((current) => ({
+        ...current,
+        [chapterId]: {
+          type: "success",
+          text: `Generated ${data.count} new definitions.`,
+        },
+      }));
+    } catch (error) {
+      console.error(error);
+      setChapterMessages((current) => ({
+        ...current,
+        [chapterId]: {
+          type: "error",
+          text:
+            error instanceof Error
+              ? error.message
+              : "Failed to generate definitions.",
+        },
+      }));
+    } finally {
+      setGeneratingDefinitions((current) => {
         const next = { ...current };
         delete next[chapterId];
         return next;
@@ -325,6 +384,8 @@ export default function EbookUploadPage() {
               <div className="divide-y divide-gray-200 dark:divide-neutral-800">
                 {chapters.map((chapter) => {
                   const isGenerating = generatingChapters[chapter.id] === true;
+                  const isGeneratingDefinitions =
+                    generatingDefinitions[chapter.id] === true;
                   const chapterMessage = chapterMessages[chapter.id];
 
                   return (
@@ -340,7 +401,7 @@ export default function EbookUploadPage() {
                           {chapter.chapter_title}
                         </h3>
                         <p className="mt-1 text-sm text-gray-600 dark:text-neutral-400">
-                          {chapter.mcq_count} MCQs
+                          {chapter.mcq_count} MCQs · {chapter.definitions_count} definitions
                         </p>
                         {chapterMessage && (
                           <p
@@ -354,20 +415,38 @@ export default function EbookUploadPage() {
                           </p>
                         )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => handleGenerateMcqs(chapter.id)}
-                        disabled={isGenerating}
-                        className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {isGenerating && (
-                          <span
-                            className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
-                            aria-hidden="true"
-                          />
-                        )}
-                        {isGenerating ? "Generating..." : "Generate MCQs"}
-                      </button>
+                      <div className="flex shrink-0 flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleGenerateMcqs(chapter.id)}
+                          disabled={isGenerating || isGeneratingDefinitions}
+                          className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {isGenerating && (
+                            <span
+                              className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                              aria-hidden="true"
+                            />
+                          )}
+                          {isGenerating ? "Generating..." : "Generate MCQs"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleGenerateDefinitions(chapter.id)}
+                          disabled={isGenerating || isGeneratingDefinitions}
+                          className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {isGeneratingDefinitions && (
+                            <span
+                              className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                              aria-hidden="true"
+                            />
+                          )}
+                          {isGeneratingDefinitions
+                            ? "Generating..."
+                            : "Generate Definitions"}
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
