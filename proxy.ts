@@ -15,6 +15,14 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Allow public ebook definitions
+  if (
+    pathname === "/api/ebook/definitions" ||
+    pathname === "/api/ebook/definitions/"
+  ) {
+    return NextResponse.next();
+  }
+
   // Allow admin auth APIs
   if (
     pathname === "/api/admin/login" ||
