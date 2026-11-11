@@ -23,6 +23,14 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Allow public ebook visuals
+  if (
+    pathname === "/api/ebook/visuals" ||
+    pathname === "/api/ebook/visuals/"
+  ) {
+    return NextResponse.next();
+  }
+
   // Allow admin auth APIs
   if (
     pathname === "/api/admin/login" ||
