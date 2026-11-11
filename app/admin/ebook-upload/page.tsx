@@ -19,6 +19,7 @@ type Chapter = {
   subject_name: string;
   mcq_count: number;
   definitions_count: number;
+  visuals_count: number;
 };
 
 type ChapterMessage = {
@@ -35,6 +36,9 @@ export default function EbookUploadPage() {
     Record<string, boolean>
   >({});
   const [generatingDefinitions, setGeneratingDefinitions] = useState<
+    Record<string, boolean>
+  >({});
+  const [generatingVisuals, setGeneratingVisuals] = useState<
     Record<string, boolean>
   >({});
   const [chapterMessages, setChapterMessages] = useState<
@@ -237,6 +241,61 @@ export default function EbookUploadPage() {
     }
   };
 
+  const handleGenerateVisuals = async (chapterId: string) => {
+    setGeneratingVisuals((current) => ({ ...current, [chapterId]: true }));
+    setChapterMessages((current) => {
+      const next = { ...current };
+      delete next[chapterId];
+      return next;
+    });
+
+    try {
+      const response = await fetch("/api/ebook/generate-visuals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chapter_id: chapterId }),
+      });
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error || "Failed to generate visuals.");
+      }
+
+      setChapters((current) =>
+        current.map((chapter) =>
+          chapter.id === chapterId
+            ? { ...chapter, visuals_count: data.count }
+            : chapter,
+        ),
+      );
+      setChapterMessages((current) => ({
+        ...current,
+        [chapterId]: {
+          type: "success",
+          text: `Generated ${data.count} new visuals.`,
+        },
+      }));
+    } catch (error) {
+      console.error(error);
+      setChapterMessages((current) => ({
+        ...current,
+        [chapterId]: {
+          type: "error",
+          text:
+            error instanceof Error
+              ? error.message
+              : "Failed to generate visuals.",
+        },
+      }));
+    } finally {
+      setGeneratingVisuals((current) => {
+        const next = { ...current };
+        delete next[chapterId];
+        return next;
+      });
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await fetch("/api/admin/logout", { method: "POST" });
@@ -386,6 +445,8 @@ export default function EbookUploadPage() {
                   const isGenerating = generatingChapters[chapter.id] === true;
                   const isGeneratingDefinitions =
                     generatingDefinitions[chapter.id] === true;
+                  const isGeneratingVisuals =
+                    generatingVisuals[chapter.id] === true;
                   const chapterMessage = chapterMessages[chapter.id];
 
                   return (
@@ -401,7 +462,8 @@ export default function EbookUploadPage() {
                           {chapter.chapter_title}
                         </h3>
                         <p className="mt-1 text-sm text-gray-600 dark:text-neutral-400">
-                          {chapter.mcq_count} MCQs · {chapter.definitions_count} definitions
+                          {chapter.mcq_count} MCQs · {chapter.definitions_count} definitions ·{" "}
+                          {chapter.visuals_count} visuals
                         </p>
                         {chapterMessage && (
                           <p
@@ -419,7 +481,11 @@ export default function EbookUploadPage() {
                         <button
                           type="button"
                           onClick={() => handleGenerateMcqs(chapter.id)}
-                          disabled={isGenerating || isGeneratingDefinitions}
+                          disabled={
+                            isGenerating ||
+                            isGeneratingDefinitions ||
+                            isGeneratingVisuals
+                          }
                           className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {isGenerating && (
@@ -433,7 +499,11 @@ export default function EbookUploadPage() {
                         <button
                           type="button"
                           onClick={() => handleGenerateDefinitions(chapter.id)}
-                          disabled={isGenerating || isGeneratingDefinitions}
+                          disabled={
+                            isGenerating ||
+                            isGeneratingDefinitions ||
+                            isGeneratingVisuals
+                          }
                           className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {isGeneratingDefinitions && (
@@ -445,6 +515,26 @@ export default function EbookUploadPage() {
                           {isGeneratingDefinitions
                             ? "Generating..."
                             : "Generate Definitions"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleGenerateVisuals(chapter.id)}
+                          disabled={
+                            isGenerating ||
+                            isGeneratingDefinitions ||
+                            isGeneratingVisuals
+                          }
+                          className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {isGeneratingVisuals && (
+                            <span
+                              className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                              aria-hidden="true"
+                            />
+                          )}
+                          {isGeneratingVisuals
+                            ? "Generating..."
+                            : "Generate Visuals"}
                         </button>
                       </div>
                     </div>

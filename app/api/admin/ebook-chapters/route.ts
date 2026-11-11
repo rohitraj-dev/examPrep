@@ -8,6 +8,7 @@ export async function GET() {
       { data: subjects, error: subjectsError },
       { data: mcqs, error: mcqsError },
       { data: definitions, error: definitionsError },
+      { data: visuals, error: visualsError },
     ] = await Promise.all([
       supabaseAdmin
         .from("ebook_chapters")
@@ -15,9 +16,16 @@ export async function GET() {
       supabaseAdmin.from("subjects").select("id, name"),
       supabaseAdmin.from("ebook_mcqs").select("chapter_id"),
       supabaseAdmin.from("ebook_definitions").select("chapter_id"),
+      supabaseAdmin.from("ebook_visuals").select("chapter_id"),
     ]);
 
-    if (chaptersError || subjectsError || mcqsError || definitionsError) {
+    if (
+      chaptersError ||
+      subjectsError ||
+      mcqsError ||
+      definitionsError ||
+      visualsError
+    ) {
       return NextResponse.json(
         {
           error:
@@ -25,6 +33,7 @@ export async function GET() {
             subjectsError?.message ||
             mcqsError?.message ||
             definitionsError?.message ||
+            visualsError?.message ||
             "Failed to fetch ebook chapters",
         },
         { status: 500 },
@@ -36,6 +45,7 @@ export async function GET() {
     );
     const mcqCounts = new Map<string, number>();
     const definitionCounts = new Map<string, number>();
+    const visualCounts = new Map<string, number>();
 
     for (const mcq of mcqs ?? []) {
       mcqCounts.set(
@@ -51,6 +61,13 @@ export async function GET() {
       );
     }
 
+    for (const visual of visuals ?? []) {
+      visualCounts.set(
+        visual.chapter_id,
+        (visualCounts.get(visual.chapter_id) ?? 0) + 1,
+      );
+    }
+
     const result = (chapters ?? [])
       .map((chapter) => ({
         id: chapter.id,
@@ -60,6 +77,7 @@ export async function GET() {
         subject_name: subjectNames.get(chapter.subject_id) ?? "Unknown subject",
         mcq_count: mcqCounts.get(chapter.id) ?? 0,
         definitions_count: definitionCounts.get(chapter.id) ?? 0,
+        visuals_count: visualCounts.get(chapter.id) ?? 0,
       }))
       .sort(
         (a, b) =>
