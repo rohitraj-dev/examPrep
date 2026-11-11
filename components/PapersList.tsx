@@ -34,6 +34,7 @@ export default function PapersList({
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
   const [isVisible, setIsVisible] = useState(false);
   const [mcqCount, setMcqCount] = useState<number | null>(null);
+  const [definitionsCount, setDefinitionsCount] = useState<number | null>(null);
   const years = useMemo(
     () => [...new Set(papers.map((paper) => paper.year))].sort((a, b) => b - a),
     [papers],
@@ -87,6 +88,39 @@ export default function PapersList({
     return () => controller.abort();
   }, [subjectId]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadDefinitionsCount() {
+      try {
+        const response = await fetch(
+          `/api/ebook/definitions?subject_id=${encodeURIComponent(subjectId)}`,
+          { signal: controller.signal },
+        );
+
+        if (!response.ok) {
+          throw new Error("Unable to load definitions count");
+        }
+
+        const data: unknown = await response.json();
+        if (!Array.isArray(data)) {
+          throw new Error("Invalid definitions response");
+        }
+
+        setDefinitionsCount(data.length);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+        console.error("Fetch definitions count error:", error);
+      }
+    }
+
+    void loadDefinitionsCount();
+
+    return () => controller.abort();
+  }, [subjectId]);
+
   const handleToggleBookmark = (paper: Paper) => {
     const bookmark: BookmarkedPaper = {
       id: paper.id,
@@ -109,6 +143,16 @@ export default function PapersList({
             className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-blue-600 px-6 py-2.5 font-medium text-white transition-all duration-200 hover:bg-blue-500 light:hover:bg-blue-700 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-400/60 light:focus:ring-blue-500/60 sm:w-auto"
           >
             Practice MCQs
+          </Link>
+        </div>
+      )}
+      {definitionsCount !== null && definitionsCount > 0 && (
+        <div className="mb-6">
+          <Link
+            href={`/subject/${subjectId}/definitions`}
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-blue-600 px-6 py-2.5 font-medium text-white transition-all duration-200 hover:bg-blue-500 light:hover:bg-blue-700 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-400/60 light:focus:ring-blue-500/60 sm:w-auto"
+          >
+            View Definitions
           </Link>
         </div>
       )}
