@@ -1,5 +1,8 @@
 import { readFile } from "node:fs/promises";
 import Module from "node:module";
+import { Agent, setGlobalDispatcher } from "undici";
+
+setGlobalDispatcher(new Agent({ headersTimeout: 600000, bodyTimeout: 600000 }));
 
 const moduleWithLoader = Module as unknown as {
   _load: (
