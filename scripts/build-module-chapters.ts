@@ -101,37 +101,48 @@ async function extractChapter(
   chapterId: string,
   cookieHeader: string,
   content: string,
+  pieceNumber: number,
+  totalPieces: number,
 ): Promise<ExtractionResult> {
-  const response = await fetch(EXTRACT_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Cookie: cookieHeader,
-    },
-    body: JSON.stringify({
-      chapter_id: chapterId,
-      syllabus_modules: SYLLABUS_MODULES,
-      override_content: content,
-    }),
-  });
-  const data: unknown = await response.json().catch(() => null);
+  console.log(
+    `Chapter ${chapterId}: calling piece ${pieceNumber}/${totalPieces}...`,
+  );
 
-  if (!response.ok) {
-    const error =
-      data &&
-      typeof data === "object" &&
-      "error" in data &&
-      typeof data.error === "string"
-        ? data.error
-        : `Request failed with status ${response.status}`;
-    throw new Error(`Chapter ${chapterId} extraction failed: ${error}`);
+  try {
+    const response = await fetch(EXTRACT_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Cookie: cookieHeader,
+      },
+      body: JSON.stringify({
+        chapter_id: chapterId,
+        syllabus_modules: SYLLABUS_MODULES,
+        override_content: content,
+      }),
+    });
+    const data: unknown = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      const error =
+        data &&
+        typeof data === "object" &&
+        "error" in data &&
+        typeof data.error === "string"
+          ? data.error
+          : `Request failed with status ${response.status}`;
+      throw new Error(`Chapter ${chapterId} extraction failed: ${error}`);
+    }
+
+    if (!isExtractionResult(data)) {
+      throw new Error(`Chapter ${chapterId} returned an invalid extraction`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Fetch error:", error, "Cause:", (error as any)?.cause);
+    throw error;
   }
-
-  if (!isExtractionResult(data)) {
-    throw new Error(`Chapter ${chapterId} returned an invalid extraction`);
-  }
-
-  return data;
 }
 
 function splitChapterContent(content: string): string[] {
@@ -216,7 +227,13 @@ async function main() {
         }
 
         pieceResults.push(
-          await extractChapter(chapterId, cookieHeader, pieces[pieceIndex]),
+          await extractChapter(
+            chapterId,
+            cookieHeader,
+            pieces[pieceIndex],
+            pieceIndex + 1,
+            pieces.length,
+          ),
         );
       }
 
@@ -226,7 +243,7 @@ async function main() {
         `Chapter ${chapterId} content length ${chapter.content.length}; processing whole.`,
       );
       extractedByChapter.push(
-        await extractChapter(chapterId, cookieHeader, chapter.content),
+        await extractChapter(chapterId, cookieHeader, chapter.content, 1, 1),
       );
     }
 
