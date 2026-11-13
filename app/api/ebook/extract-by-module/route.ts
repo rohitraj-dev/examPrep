@@ -196,9 +196,11 @@ ${chapterContent}`;
       return NextResponse.json(parseModuleExtraction(responseText));
     } catch (error) {
       throw new Error(
-        `Gemini returned invalid JSON: ${
+        `Gemini returned invalid JSON (finishReason: ${
+          geminiData.candidates?.[0]?.finishReason
+        }): ${
           error instanceof Error ? error.message : "Unable to parse response"
-        }`,
+        } | responseText preview: ${responseText.slice(0, 500)}`,
       );
     }
   } catch (error) {
