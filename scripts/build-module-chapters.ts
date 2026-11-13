@@ -134,35 +134,46 @@ async function extractChapter(
   return data;
 }
 
-function splitChapterContent(content: string): [string, string] {
-  const midpoint = Math.floor(content.length / 2);
-  const beforeBoundary = content.lastIndexOf("\n\n", midpoint);
-  const afterBoundary = content.indexOf("\n\n", midpoint);
-  const splitIndex =
-    beforeBoundary === -1 ||
-    (afterBoundary !== -1 &&
-      midpoint - beforeBoundary > afterBoundary - midpoint)
-      ? afterBoundary
-      : beforeBoundary;
+function splitChapterContent(content: string): string[] {
+  const pieces: string[] = [];
+  let startIndex = 0;
 
-  if (splitIndex === -1) {
-    throw new Error("Unable to split chapter content at a paragraph boundary");
+  for (let pieceNumber = 1; pieceNumber < 4; pieceNumber++) {
+    const targetIndex = Math.floor((content.length * pieceNumber) / 4);
+    const beforeBoundary = content.lastIndexOf("\n\n", targetIndex);
+    const afterBoundary = content.indexOf("\n\n", targetIndex);
+    const splitIndex =
+      beforeBoundary < startIndex ||
+      (afterBoundary !== -1 &&
+        targetIndex - beforeBoundary > afterBoundary - targetIndex)
+        ? afterBoundary
+        : beforeBoundary;
+
+    if (splitIndex === -1) {
+      throw new Error("Unable to split chapter content at a paragraph boundary");
+    }
+
+    pieces.push(content.slice(startIndex, splitIndex).trim());
+    startIndex = splitIndex + 2;
   }
 
-  return [
-    content.slice(0, splitIndex).trimEnd(),
-    content.slice(splitIndex + 2).trimStart(),
-  ];
+  pieces.push(content.slice(startIndex).trim());
+  return pieces;
 }
 
 function mergeExtractionResults(
-  first: ExtractionResult,
-  second: ExtractionResult,
+  results: ExtractionResult[],
 ): ExtractionResult {
   return Object.fromEntries(
     SYLLABUS_MODULES.map(({ module_number }) => {
       const key = `module_${module_number}` as const;
-      return [key, [first[key], second[key]].filter(Boolean).join("\n\n")];
+      return [
+        key,
+        results
+          .map((result) => result[key])
+          .filter(Boolean)
+          .join("\n\n"),
+      ];
     }),
   ) as ExtractionResult;
 }
@@ -190,25 +201,26 @@ async function main() {
     }
 
     if (chapter.content.length > SPLIT_THRESHOLD) {
-      const [firstHalf, secondHalf] = splitChapterContent(chapter.content);
+      const pieces = splitChapterContent(chapter.content);
       console.log(
-        `Chapter ${chapterId} content length ${chapter.content.length}; splitting into halves (${firstHalf.length} and ${secondHalf.length} characters).`,
+        `Chapter ${chapterId} content length ${chapter.content.length}; splitting into ${pieces.length} quarters (${pieces.map((piece) => piece.length).join(", ")} characters).`,
       );
-      const firstResult = await extractChapter(
-        chapterId,
-        cookieHeader,
-        firstHalf,
-      );
-      console.log("Waiting 65 seconds between split chapter requests...");
-      await new Promise((resolve) => setTimeout(resolve, REQUEST_DELAY_MS));
-      const secondResult = await extractChapter(
-        chapterId,
-        cookieHeader,
-        secondHalf,
-      );
-      extractedByChapter.push(
-        mergeExtractionResults(firstResult, secondResult),
-      );
+      const pieceResults: ExtractionResult[] = [];
+
+      for (let pieceIndex = 0; pieceIndex < pieces.length; pieceIndex++) {
+        if (pieceIndex > 0) {
+          console.log("Waiting 65 seconds between split chapter requests...");
+          await new Promise((resolve) =>
+            setTimeout(resolve, REQUEST_DELAY_MS),
+          );
+        }
+
+        pieceResults.push(
+          await extractChapter(chapterId, cookieHeader, pieces[pieceIndex]),
+        );
+      }
+
+      extractedByChapter.push(mergeExtractionResults(pieceResults));
     } else {
       console.log(
         `Chapter ${chapterId} content length ${chapter.content.length}; processing whole.`,
