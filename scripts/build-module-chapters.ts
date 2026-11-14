@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import Module from "node:module";
 import { Agent, setGlobalDispatcher } from "undici";
 
@@ -22,6 +22,7 @@ moduleWithLoader._load = function (request, parent, isMain) {
 
 const SUBJECT_ID = "9725fadd-658f-4c51-b51b-402a6d8998aa";
 const EXTRACT_URL = "http://localhost:3000/api/ebook/extract-by-module";
+const CHECKPOINT_FILE = new URL("./.module-checkpoint.json", import.meta.url);
 const SPLIT_THRESHOLD = 400000;
 const REQUEST_DELAY_MS = 65000;
 const CHAPTER_IDS = [
@@ -65,6 +66,45 @@ const SYLLABUS_MODULES = [
 
 type ModuleNumber = (typeof SYLLABUS_MODULES)[number]["module_number"];
 type ExtractionResult = Record<`module_${ModuleNumber}`, string>;
+type Checkpoint = Record<string, ExtractionResult>;
+
+async function loadCheckpoint(): Promise<Checkpoint> {
+  try {
+    const checkpoint = JSON.parse(
+      await readFile(CHECKPOINT_FILE, "utf8"),
+    ) as unknown;
+
+    if (!checkpoint || typeof checkpoint !== "object" || Array.isArray(checkpoint)) {
+      throw new Error("Checkpoint must contain an object");
+    }
+
+    return checkpoint as Checkpoint;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return {};
+    }
+
+    throw new Error(
+      `Failed to read checkpoint file: ${
+        error instanceof Error ? error.message : error
+      }`,
+    );
+  }
+}
+
+function getCheckpointKey(chapterId: string, pieceIndex: number): string {
+  return `${chapterId}:${pieceIndex}`;
+}
+
+async function saveCheckpoint(
+  checkpoint: Checkpoint,
+  chapterId: string,
+  pieceIndex: number,
+  result: ExtractionResult,
+): Promise<void> {
+  checkpoint[getCheckpointKey(chapterId, pieceIndex)] = result;
+  await writeFile(CHECKPOINT_FILE, `${JSON.stringify(checkpoint, null, 2)}\n`);
+}
 
 function getCookieHeader(cookieFile: string): string {
   const adminSessionCookie = cookieFile
@@ -196,6 +236,7 @@ async function main() {
   const { supabaseAdmin } = await import("../lib/supabase-admin");
   const cookieFile = await readFile("/tmp/cookie.txt", "utf8");
   const cookieHeader = getCookieHeader(cookieFile);
+  const checkpoint = await loadCheckpoint();
   const extractedByChapter: ExtractionResult[] = [];
 
   for (let index = 0; index < CHAPTER_IDS.length; index++) {
@@ -229,15 +270,27 @@ async function main() {
           );
         }
 
-        pieceResults.push(
-          await extractChapter(
+        const checkpointKey = getCheckpointKey(chapterId, pieceIndex + 1);
+        const pieceResult = checkpoint[checkpointKey]
+          ? checkpoint[checkpointKey]
+          : await extractChapter(
+              chapterId,
+              cookieHeader,
+              pieces[pieceIndex],
+              pieceIndex + 1,
+              pieces.length,
+            );
+
+        if (!checkpoint[checkpointKey]) {
+          await saveCheckpoint(
+            checkpoint,
             chapterId,
-            cookieHeader,
-            pieces[pieceIndex],
             pieceIndex + 1,
-            pieces.length,
-          ),
-        );
+            pieceResult,
+          );
+        }
+
+        pieceResults.push(pieceResult);
       }
 
       extractedByChapter.push(mergeExtractionResults(pieceResults));
@@ -245,9 +298,16 @@ async function main() {
       console.log(
         `Chapter ${chapterId} content length ${chapter.content.length}; processing whole.`,
       );
-      extractedByChapter.push(
-        await extractChapter(chapterId, cookieHeader, chapter.content, 1, 1),
-      );
+      const checkpointKey = getCheckpointKey(chapterId, 1);
+      const chapterResult = checkpoint[checkpointKey]
+        ? checkpoint[checkpointKey]
+        : await extractChapter(chapterId, cookieHeader, chapter.content, 1, 1);
+
+      if (!checkpoint[checkpointKey]) {
+        await saveCheckpoint(checkpoint, chapterId, 1, chapterResult);
+      }
+
+      extractedByChapter.push(chapterResult);
     }
 
     if (index < CHAPTER_IDS.length - 1) {
