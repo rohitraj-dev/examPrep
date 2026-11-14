@@ -139,7 +139,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${process.env.GEMINI_MODEL_OVERRIDE || GEMINI_MODEL}:generateContent?key=${apiKey}`;
     const prompt = `Go through the complete chapter content below and, for EACH syllabus module, extract and copy only the portions of the chapter that are relevant to that module's topics. Include relevant paragraphs, examples, and explanations. Preserve the original wording exactly; do not summarize, rewrite, or add outside knowledge. If no content in the chapter is relevant to a module, use an empty string for that module. Return ONLY valid JSON with exactly these string fields: "module_1", "module_2", "module_3", "module_4", and "module_5". Do not use markdown, code fences, or explanatory text.
 
 Syllabus modules:
